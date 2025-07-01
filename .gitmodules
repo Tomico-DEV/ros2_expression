@@ -1,0 +1,4 @@
+[submodule "external/inochi2d-c"]
+	path = external/inochi2d-c
+	url = git@github.com:Tomico-DEV/inochi2d-c.git
+	branch = v8_0
