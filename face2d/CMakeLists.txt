@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.8)
-project(2d_face)
+project(face2d)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# set(CMAKE_BUILD_TYPE Debug)
+# set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -24,10 +29,11 @@ add_custom_command(
   COMMAND ${DUB_EXECUTABLE} build
     --compiler=${LDC_EXECUTABLE}
     --config=yesgl
-    --build-dir=${INOCHI2D_BUILD_DIR}/dub # build shenanigans
-    --overide-config=targetPath=${INOCHI2D_BUILD_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    ${INOCHI2D_SOURCE_DIR}/out/libinochi2d-c.so
+    ${INOCHI2D_SO}
   WORKING_DIRECTORY ${INOCHI2D_SOURCE_DIR}
-  COMMENT "Building inochi2d-c with ${DUB_EXECUTABLE} (${LDC_EXECUTABLE}) into ${INOCHI2D_BUILD_DIR}"
+  COMMENT "Building inochi2d-c with ${DUB_EXECUTABLE} (${LDC_EXECUTABLE}) and copying into ${INOCHI2D_BUILD_DIR}"
 )
 
 add_custom_target(build-inochi2d-c ALL DEPENDS ${INOCHI2D_SO})
@@ -37,6 +43,10 @@ add_library(inochi2d-c SHARED IMPORTED GLOBAL)
 set_target_properties(inochi2d-c PROPERTIES
   IMPORTED_LOCATION ${INOCHI2D_SO}
   INTERFACE_INCLUDE_DIRECTORIES ${INOCHI2D_SOURCE_DIR}
+)
+
+install(FILES ${INOCHI2D_SO}
+  DESTINATION lib
 )
 
 #--------------------------SFML stuff------------------------------
@@ -54,10 +64,46 @@ FetchContent_MakeAvailable(SFML)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(ament_index_cpp REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(OpenGL REQUIRED)
 
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+add_executable(face2d 
+  src/face2d.cpp
+  src/face2d_node.cpp
+  src/puppet_window.cpp
+  src/camera.cpp
+)
+# Ensure runtime linker can find the shared lib from install tree
+#set_target_properties(face2d PROPERTIES
+#  BUILD_RPATH "$ORIGIN/.."
+#  INSTALL_RPATH "$ORIGIN/.."
+#)
+add_dependencies(face2d build-inochi2d-c)
+
+ament_target_dependencies(face2d
+  rclcpp
+  ament_index_cpp
+  # EXCLUDE_TARGET_LIBRARIES
+)
+
+target_link_libraries(face2d  
+  SFML::Window
+  OpenGL::GL
+  inochi2d-c
+)
+
+target_include_directories(face2d
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+
+install(TARGETS
+  face2d
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
