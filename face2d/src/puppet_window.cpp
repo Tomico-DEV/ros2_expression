@@ -39,11 +39,8 @@ void PuppetWindow::update_window_()
         return static_cast<double>(sf::Clock().getElapsedTime().asSeconds()); 
     });
 
-    {
-        std::lock_guard<std::mutex> lock { window_mutex_ };
-        if (!p_puppet_)
-            p_puppet_ = inPuppetLoad(puppet_filepath_.c_str());
-    }
+    load_puppet_();
+    get_puppet_params_();
 
     inViewportSet(size_.x, size_.y);
     Camera cam { };
@@ -90,9 +87,9 @@ void PuppetWindow::update_window_()
         
         if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle))
         {
-            std::cout << "Middle down\n";
+            //std::cout << "Middle down\n";
             auto newpos = cam.get_pos() + sf::Vector2f { delta } / cam.get_zoom();
-            std::cout << "Moving to " << newpos.x << " " << newpos.y << "\n";
+            //std::cout << "Moving to " << newpos.x << " " << newpos.y << "\n";
             cam.set_pos(cam.get_pos() + sf::Vector2f { delta } / cam.get_zoom());
         }
         
@@ -118,6 +115,41 @@ void PuppetWindow::update_window_()
     inPuppetDestroy(p_puppet_);
     // unload inochi2d runtime
     inCleanup();
+}
+
+void PuppetWindow::load_puppet_()
+{
+    std::lock_guard<std::mutex> lock { window_mutex_ };
+    std::cout << puppet_filepath_ << "\n";
+    if (!p_puppet_)
+        p_puppet_ = inPuppetLoad(puppet_filepath_.c_str());
+}
+
+void PuppetWindow::get_puppet_params_()
+{
+    std::lock_guard<std::mutex> lock { window_mutex_ };
+
+    InParameter ** params = nullptr;
+    size_t param_count = 0;
+
+    inPuppetGetParameters(p_puppet_, &params, &param_count);
+
+    for (size_t i = 0; i < param_count; i++)
+    {
+        auto param = params[i];
+        if (inParameterIsVec2(param))
+        {
+            Parameter2D param2d { param };
+            std::cout << "Found 2d param: " << param2d.get_name() << "\n";
+            puppet_params_.emplace(param2d.get_name(), param2d);
+        } 
+        else
+        {
+            Parameter1D param1d { param };
+            std::cout << "Found 1d param: " << param1d.get_name() << "\n";
+            puppet_params_.emplace(param1d.get_name(), param1d);
+        }
+    }
 }
 
 void PuppetWindow::set_puppet(const std::string& fpath)

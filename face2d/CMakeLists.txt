@@ -73,6 +73,7 @@ add_executable(face2d
   src/face2d_node.cpp
   src/puppet_window.cpp
   src/camera.cpp
+  src/parameter.cpp
 )
 # Ensure runtime linker can find the shared lib from install tree
 #set_target_properties(face2d PROPERTIES
@@ -99,6 +100,11 @@ target_include_directories(face2d
     $<INSTALL_INTERFACE:include>
 )
 
+
+install(
+  DIRECTORY puppet
+  DESTINATION share/${PROJECT_NAME}
+)
 
 install(TARGETS
   face2d

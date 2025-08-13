@@ -22,6 +22,7 @@
 #include <inochi2d.h>
 
 #include <face2d/camera.hpp>
+#include <face2d/parameter.hpp>
 
 
 namespace face2d
@@ -73,9 +74,13 @@ public:
     std::atomic<float> zoom_max = 4.0f;
 private:
     void update_window_();
+    void load_puppet_();
+    void get_puppet_params_();
     // inochi2d
     std::string puppet_filepath_;
     InPuppet * p_puppet_ = nullptr;
+    std::unordered_map<std::string, std::variant<Parameter1D, Parameter2D>> puppet_params_;
+
     
     // thread and sfml
     std::atomic<bool> running_ = false;
