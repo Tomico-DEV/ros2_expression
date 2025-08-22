@@ -2,11 +2,13 @@
 
 #include <iostream>
 
+
 namespace face2d
 {
 
 PuppetWindow::PuppetWindow(std::string name, sf::Vector2u size, uint32_t style)
-: p_window_mutex_ { std::make_shared<std::mutex>() }, window_name_ { name }, size_ { size }, style_ { style }
+: p_window_mutex_ { std::make_shared<std::mutex>() }, 
+window_name_ { name }, size_ { size }, style_ { style }
 { }
 
 void PuppetWindow::start()
@@ -30,11 +32,15 @@ void PuppetWindow::set_close_callback(std::function<void()> callback)
     close_callback_ = callback;
 }
 
+/**
+ * \brief render loop
+ */
 void PuppetWindow::update_window_()
 {
     window_.create(sf::VideoMode { size_ }, window_name_, style_); 
     window_.setVerticalSyncEnabled(true);
 
+    // initialize inochi2d
     inInit([]() -> double { 
         return static_cast<double>(sf::Clock().getElapsedTime().asSeconds()); 
     });
@@ -55,7 +61,7 @@ void PuppetWindow::update_window_()
 
         while (const std::optional event = window_.pollEvent())
         {
-
+            // close
             if (event->is<sf::Event::Closed>())
             {
                 window_.close();
@@ -63,7 +69,7 @@ void PuppetWindow::update_window_()
                 if (close_callback_)
                     close_callback_();
             }
-        
+            // window resize
             if (const auto * resized = event->getIf<sf::Event::Resized>())
             {
                 size_.x = resized->size.x;
@@ -71,7 +77,7 @@ void PuppetWindow::update_window_()
                 glViewport(0, 0, size_.x, size_.y);
                 inViewportSet(size_.x, size_.y);
             }
-
+            // wheel scroll
             if (const auto * scroll = event->getIf<sf::Event::MouseWheelScrolled>())
             {
                 cam.set_zoom(
@@ -84,14 +90,18 @@ void PuppetWindow::update_window_()
             }
             
         }
-        
+        // middle click pan
         if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle))
         {
             cam.set_pos(cam.get_pos() + sf::Vector2f { delta } / cam.get_zoom());
-        }_
+        }
         
         (void) window_.setActive(true);
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        //float elapsed = clock.getElapsedTime().asSeconds();
+        //std::get<Parameter1D>(puppet_params_.at("Mouth Openness")).set_value(std::sin(elapsed * 2));
         
         {
             std::lock_guard<std::mutex> lock { *p_window_mutex_ };
@@ -110,7 +120,7 @@ void PuppetWindow::update_window_()
         while (!get_params_queue_.empty())
         {
             get_puppet_params_();
-            get_params_queue_.front().set_value(puppet_params_);
+            get_params_queue_.front().set_value(p_puppet_params_);
             get_params_queue_.pop();
         }
 
@@ -142,6 +152,8 @@ void PuppetWindow::get_puppet_params_()
 {
     std::lock_guard<std::mutex> lock { *p_window_mutex_ };
 
+    p_puppet_params_ =  std::make_shared<puppet_params_t>(); 
+    
     InParameter ** params = nullptr;
     size_t param_count = 0;
 
@@ -150,17 +162,18 @@ void PuppetWindow::get_puppet_params_()
     for (size_t i = 0; i < param_count; i++)
     {
         auto param = params[i];
+        std::string param_name { inParameterGetName(param) };
         if (inParameterIsVec2(param))
         {
-            Parameter2D param2d { param, p_window_mutex_ };
+            Parameter2D param2d { param_name, p_window_mutex_ };
             std::cout << "Found 2d param: " << param2d.get_name() << "\n";
-            puppet_params_.emplace(param2d.get_name(), param2d);
+            p_puppet_params_->emplace(param2d.get_name(), std::move(param2d));
         } 
         else
         {
-            Parameter1D param1d { param, p_window_mutex_ };
+            Parameter1D param1d { param_name, p_window_mutex_ };
             std::cout << "Found 1d param: " << param1d.get_name() << "\n";
-            puppet_params_.emplace(param1d.get_name(), param1d);
+            p_puppet_params_->emplace(param1d.get_name(), std::move(param1d));
         }
     }
 }
@@ -171,15 +184,39 @@ void PuppetWindow::get_puppet_params_()
  */
 void PuppetWindow::update_puppet_params_()
 {
-    for (auto& [name, param] : puppet_params_)
+    InParameter ** params = nullptr;
+    size_t param_count = 0;
+
+    inPuppetGetParameters(p_puppet_, &params, &param_count);
+
+    for (size_t i = 0; i < param_count; i++)
     {
-        (void)name;
-        std::visit(
-            [](auto& p) 
+        auto in_param = params[i];
+        auto param_variant = p_puppet_params_->at(std::string { inParameterGetName(in_param) });
+
+        if (std::holds_alternative<Parameter1D>(param_variant))
+        {
+            Parameter1D param = std::get<Parameter1D>(param_variant);
+            if (param.is_changed())
             {
-                p.update_value();
-            }, param
-        );
+                float new_val = param.consume_value();
+                std::cout << "Update " << param.get_name() << " to " << new_val << "\n";
+                inParameterSetValue(in_param, new_val, 0.0f);
+            }
+        } 
+        if (std::holds_alternative<Parameter2D>(param_variant))
+        {
+            Parameter2D param = std::get<Parameter2D>(param_variant);
+            if (param.is_changed())
+            {
+                sf::Vector2f new_val = param.consume_value();
+                std::cout << "Update " << param.get_name() << " to " << new_val.x << ", " << new_val.y << "\n";
+                inParameterSetValue(in_param, new_val.x, new_val.y);
+            
+            }
+        }
+
+        inParameterDestroy(in_param);
     }
 }
 
@@ -192,9 +229,9 @@ void PuppetWindow::set_puppet(const std::string& fpath)
         throw std::runtime_error("Provided file does not exist!");
 }
 
-auto PuppetWindow::get_params() -> std::future<puppet_params_t>
+auto PuppetWindow::get_params() -> std::future<std::shared_ptr<puppet_params_t>>
 {
-    std::promise<puppet_params_t> param_promise;
+    std::promise<std::shared_ptr<puppet_params_t>> param_promise;
     auto param_future = param_promise.get_future();
     
     {

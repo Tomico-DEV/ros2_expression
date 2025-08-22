@@ -67,7 +67,7 @@ public:
     /**
      * \brief get puppet parameters
      */
-    std::future<puppet_params_t> get_params();
+    std::future<std::shared_ptr<puppet_params_t>> get_params();
 
     /**
      * \brief reloads puppet given that an existing puppet exists
@@ -94,8 +94,8 @@ private:
     // inochi2d
     std::string puppet_filepath_;
     InPuppet * p_puppet_ = nullptr;
-    puppet_params_t puppet_params_;
-    std::queue<std::promise<puppet_params_t>> get_params_queue_;
+    std::shared_ptr<puppet_params_t> p_puppet_params_;
+    std::queue<std::promise<std::shared_ptr<puppet_params_t>>> get_params_queue_;
 
     
     // thread and sfml
@@ -109,7 +109,7 @@ private:
 
     // callbacks
     std::function<void()> close_callback_ = nullptr;
-
+    
     // logging
     /*
     rclcpp::Logger logger_;

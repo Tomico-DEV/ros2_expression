@@ -148,7 +148,7 @@ void Face2DNode::make_subscribers_()
 {
     auto params_future = p_window_->get_params();
     // wait for window to load params
-    auto puppet_params = std::make_shared<puppet_params_t>(params_future.get());
+    auto puppet_params = params_future.get();
 
     YAML::Node param_mapping = YAML::LoadFile(
         get_parameter("puppet_config_file").as_string()
