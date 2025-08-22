@@ -67,6 +67,8 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(face_msgs REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 add_executable(face2d 
   src/face2d.cpp
@@ -85,6 +87,8 @@ add_dependencies(face2d build-inochi2d-c)
 ament_target_dependencies(face2d
   rclcpp
   ament_index_cpp
+  face_msgs
+  yaml-cpp
   # EXCLUDE_TARGET_LIBRARIES
 )
 
@@ -92,6 +96,7 @@ target_link_libraries(face2d
   SFML::Window
   OpenGL::GL
   inochi2d-c
+  yaml-cpp
 )
 
 target_include_directories(face2d

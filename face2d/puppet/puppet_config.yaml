@@ -1,0 +1,21 @@
+param_mapping:
+  mouth:
+    right_lip_corner: "Right Lip Corner"
+    left_lip_corner: "Left Lip Corner"
+    openness: "Mouth Openness"
+    wideness: "Mouth Wideness"
+  right_eye:
+    brow_inner: "Right Brow Inner"
+    brow_outer: "Right Brow Outer"
+    eyelid: "Right Eyelid"
+    eye: "Right Eye"
+    cheek: "Right Cheek"
+  left_eye:
+    brow_inner: "Left Brow Inner"
+    brow_outer: "Left Brow Outer"
+    eyelid: "Left Eyelid"
+    eye: "Left Eye"
+    cheek: "Left Cheek"
+  neck:
+    pitch_yaw: "Head Pitch Yaw"
+    roll: "Head Roll"

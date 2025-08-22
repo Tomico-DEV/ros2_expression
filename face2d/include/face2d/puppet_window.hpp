@@ -6,11 +6,13 @@
 #include <string>
 #include <thread>
 #include <cmath>
+#include <queue>
 #include <memory>
 #include <mutex>
 #include <vector>
 #include <optional>
 #include <filesystem>
+#include <future>
 
 #include "rclcpp/logging.hpp"
 #include "rclcpp/clock.hpp"
@@ -28,6 +30,7 @@
 namespace face2d
 {
 
+typedef std::unordered_map<std::string, std::variant<Parameter1D, Parameter2D>> puppet_params_t;
 
 /**
  * \brief pupper renderer and window class
@@ -62,12 +65,21 @@ public:
     void set_puppet(const std::string& fpath);
 
     /**
+     * \brief get puppet parameters
+     */
+    std::future<puppet_params_t> get_params();
+
+    /**
      * \brief reloads puppet given that an existing puppet exists
      */
     void reload_puppet();
 
+    /**
+     * \brief set callback for when the window closes
+     */
     void set_close_callback(std::function<void()> callback);
     
+
     // ui
     std::atomic<float> zoom_multiplier = 1.1f;
     std::atomic<float> zoom_min = 0.01f;
@@ -76,16 +88,20 @@ private:
     void update_window_();
     void load_puppet_();
     void get_puppet_params_();
+    void update_puppet_params_();
+
+
     // inochi2d
     std::string puppet_filepath_;
     InPuppet * p_puppet_ = nullptr;
-    std::unordered_map<std::string, std::variant<Parameter1D, Parameter2D>> puppet_params_;
+    puppet_params_t puppet_params_;
+    std::queue<std::promise<puppet_params_t>> get_params_queue_;
 
     
     // thread and sfml
     std::atomic<bool> running_ = false;
     std::thread window_thread_;
-    std::mutex window_mutex_;
+    std::shared_ptr<std::mutex> p_window_mutex_;
     sf::Window window_;
     std::string window_name_;
     sf::Vector2u size_;

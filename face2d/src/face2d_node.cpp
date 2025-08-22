@@ -4,6 +4,7 @@
 #define INOCHI2D_GLYES
 #endif
 #include <inochi2d.h>
+#include <iostream>
 
 namespace face2d
 {
@@ -20,6 +21,10 @@ Face2DNode::Face2DNode()
     );
     p_window_->set_puppet(get_parameter("puppet_file").as_string());
     p_window_->start();
+
+    make_subscribers_();
+
+    RCLCPP_INFO(get_logger(), "Got params!");
 }
 
 Face2DNode::~Face2DNode()
@@ -66,7 +71,7 @@ void Face2DNode::declare_params_()
         desc.description = desc_text;
         return desc;
     };
-
+    
     declare_parameter<int>("window.width", 800, make_desc("Width of window (pixels)", true));
     declare_parameter<int>("window.height", 600, make_desc("Height of window (pixels)", true));
     declare_parameter<std::string>("window.title", "Face2D", make_desc("Title of the window"));
@@ -88,7 +93,105 @@ void Face2DNode::declare_params_()
             return desc;
         }()
     );
+    std::filesystem::path default_config_path = package_path / "puppet" / "puppet_config.yaml";
+    declare_parameter<std::string>(
+        "puppet_config_file",
+        default_config_path.string(),
+        [&]{
+            ParamDesc desc;
+            desc.description = "Filepath to puppet's config file";
+            return desc;
+        }()
+    );
+}
 
+void Face2DNode::flatten_mappings_(
+    const YAML::Node& node,
+    std::map<std::string, std::string>& out_map,
+    const std::string& current_path
+)
+{
+    if (!node.IsMap())
+        return;
+    
+    // node is a map - get key and value 
+    for (auto& entry : node)
+    {
+        std::string key = entry.first.as<std::string>();
+        const YAML::Node& value = entry.second;
+
+        // append key to current path
+        std::string new_path = current_path + "/" + key;
+
+        if (value.IsMap())
+        {
+            flatten_mappings_(value, out_map, new_path); // keep going..
+        }
+        else if (value.IsScalar())
+        {
+            out_map[new_path] = value.as<std::string>(); // reached end, add key and val to map!
+        }
+        else
+        {
+            throw std::runtime_error(
+                "Unsupported value in param_mappings! Must be map or scalar"
+            );
+        }
+
+    }
+}
+
+/**
+ * \brief get puppet params and create corresponding subscribers
+ */
+void Face2DNode::make_subscribers_()
+{
+    auto params_future = p_window_->get_params();
+    // wait for window to load params
+    auto puppet_params = std::make_shared<puppet_params_t>(params_future.get());
+
+    YAML::Node param_mapping = YAML::LoadFile(
+        get_parameter("puppet_config_file").as_string()
+    )["param_mapping"];
+    std::map<std::string, std::string> ros2_inochi_param_map;
+    flatten_mappings_(param_mapping, ros2_inochi_param_map, "");
+
+    // iterate through param_mapping and create subscribers
+    for (auto& [topic, param_name] : ros2_inochi_param_map)
+    {
+        auto& param = puppet_params->at(param_name);
+        if (std::holds_alternative<Parameter1D>(param))
+        {
+            subscriber_1d_.push_back(
+                create_subscription<face_msgs::msg::Param1D>(
+                    topic, 10, 
+                    [puppet_params, param_name](const face_msgs::msg::Param1D::SharedPtr msg)
+                    {
+                        std::cout << "Setting " << param_name << " to " << msg->val << "\n";
+                        std::get<Parameter1D>(puppet_params->at(param_name)).set_value(msg->val);
+                    }
+                )
+            );
+        } 
+        else if (std::holds_alternative<Parameter2D>(param))
+        { 
+            subscriber_2d_.push_back(
+                create_subscription<face_msgs::msg::Param2D>(
+                    topic, 10,
+                    [puppet_params, param_name](const face_msgs::msg::Param2D::SharedPtr msg)
+                    {
+                        std::cout << "Setting " << param_name << " to " << msg->x << ", " << msg->y << "\n";
+                        std::get<Parameter2D>(puppet_params->at(param_name)).set_value(sf::Vector2f { 
+                            static_cast<float>(msg->x), 
+                            static_cast<float>(msg->y) 
+                        });
+                    }
+                )
+            );
+        }
+    }
+    
+    RCLCPP_INFO(get_logger(), "Subscribers initialized!");
 }
 
 }

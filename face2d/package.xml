@@ -20,11 +20,14 @@
   <build_depend>libdrm-dev</build_depend>
   <!--inochi2d deps-->
   <build_depend>zlib</build_depend>
+  
+  <build_depend>yaml-cpp</build_depend>
   <!-- to do: add to rosdistro <build_depend>libgbm-dev</build_depend> -->
 
   <!-- to do: add to rosdistro <build_depend>tweeny</build_depend> -->
 
   <depend>ament_index_cpp</depend>
+  <depend>face_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
