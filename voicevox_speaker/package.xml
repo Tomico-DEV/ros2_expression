@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>face2d</name>
+  <name>voicevox_speaker</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Voicevox ros2</description>
   <maintainer email="humansbadrobotsgood@gmail.com">tomicodev</maintainer>
   <license>Apache-2.0</license>
 
@@ -18,17 +18,9 @@
   <build_depend>libvorbis-dev</build_depend>
   <build_depend>opengl</build_depend>
   <build_depend>libdrm-dev</build_depend>
-  <!--inochi2d deps-->
-  <build_depend>zlib</build_depend>
-  
-  <build_depend>yaml-cpp</build_depend>
-  <!-- to do: add to rosdistro <build_depend>libgbm-dev</build_depend> -->
-
-  <!-- to do: add to rosdistro <build_depend>tweeny</build_depend> -->
 
   <depend>ament_index_cpp</depend>
   <depend>rclcpp</depend>
-  <depend>face_msgs</depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

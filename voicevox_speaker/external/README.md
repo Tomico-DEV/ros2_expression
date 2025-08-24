@@ -1,0 +1,3 @@
+Run voicevox_setup.sh to populate this directory! I wish I could but I can't redistribute the voice models in particular. Instead, I've written a script that lets you do this interactively using [voicevox's official downloader](https://github.com/VOICEVOX/voicevox_core/releases)
+
+You *can* choose to download the appropriate downloader and run it manually here, but the setup script exists, so why not use it? ¯\\\_(ツ)\_/¯
