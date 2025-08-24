@@ -86,6 +86,7 @@ FetchContent_MakeAvailable(SFML)
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(speaker_actions REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -100,8 +101,9 @@ add_executable(speaker_node
 add_dependencies(speaker_node voicevox_core)
 
 ament_target_dependencies(speaker_node
-  rclcpp
   ament_index_cpp
+  rclcpp
+  speaker_actions
 )
 
 target_link_libraries(speaker_node

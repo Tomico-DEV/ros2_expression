@@ -14,8 +14,13 @@ class VVSpeakerNode : public rclcpp::Node
 public:
     VVSpeakerNode();
 
-
 private:
+    void declare_params();
+
+    std::filesystem::path dict_path_;
+    std::filesystem::path ort_path_;
+    std::vector<std::filesystem::path> model_paths_;
+
     std::unique_ptr<Voicevox> p_voicevox_;
     sf::SoundBuffer buffer_;
     sf::Sound sound_;

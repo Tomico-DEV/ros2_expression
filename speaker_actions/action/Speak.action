@@ -1,0 +1,10 @@
+# text to speak
+string text
+---
+# false if errors
+bool success
+---
+# viseme being spoken
+string viseme
+# how long the viseme lasts
+builtin_interfaces/Duration duration
