@@ -19,6 +19,9 @@
   <build_depend>opengl</build_depend>
   <build_depend>libdrm-dev</build_depend>
 
+  <!--audioquery support-->
+  <build_depend>nlohmann-json-dev</build_depend>
+
   <depend>ament_index_cpp</depend>
   <depend>rclcpp</depend>
   <depend>speaker_actions</depend>

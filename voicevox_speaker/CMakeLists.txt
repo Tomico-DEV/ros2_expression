@@ -71,13 +71,19 @@ install(DIRECTORY ${VOICEVOX_SRC}/onnxruntime/lib/
 
 #--------------------------SFML stuff------------------------------
 
+# just to be safe..
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 include(FetchContent)
 FetchContent_Declare(SFML
     GIT_REPOSITORY https://github.com/SFML/SFML.git
     GIT_TAG 3.0.1
     GIT_SHALLOW ON
     EXCLUDE_FROM_ALL
-    SYSTEM)
+    SYSTEM
+    CMAKE_ARGS
+      -DBUILD_SHARED_LIBS=ON
+)
 FetchContent_MakeAvailable(SFML)
 
 # -------------------------------ROS2-----------------------------
@@ -86,42 +92,57 @@ FetchContent_MakeAvailable(SFML)
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_action REQUIRED)
+find_package(rclcpp_components REQUIRED)
 find_package(speaker_actions REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
+find_package(nlohmann_json REQUIRED)
 
-add_executable(speaker_node
-  src/voicevox_utils.cpp
+add_library(speak_action_server SHARED
+  src/voicevox_speaker.cpp
   src/speaker_node.cpp
   src/synthesizer.cpp
   src/voicevox.cpp
-  src/voicevox_speaker.cpp
+  src/voicevox_utils.cpp
 )
-add_dependencies(speaker_node voicevox_core)
 
-ament_target_dependencies(speaker_node
-  ament_index_cpp
+add_dependencies(speak_action_server voicevox_core)
+
+target_include_directories(speak_action_server PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+target_compile_definitions(speak_action_server
+  PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL"
+)
+ament_target_dependencies(speak_action_server
   rclcpp
+  rclcpp_action
+  rclcpp_components
+  ament_index_cpp
   speaker_actions
+  nlohmann_json
 )
-
-target_link_libraries(speaker_node
+target_link_libraries(speak_action_server
   voicevox_core
   SFML::Audio
+  nlohmann_json::nlohmann_json
 )
 
-target_include_directories(speaker_node
-  PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
+rclcpp_components_register_node(speak_action_server 
+  PLUGIN "voicevox::VVSpeakerNode" 
+  EXECUTABLE speaker_node
 )
-
 install(TARGETS
-  speaker_node
-  DESTINATION lib/${PROJECT_NAME}
+  speak_action_server
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
 )
 
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

@@ -60,7 +60,13 @@ FetchContent_Declare(SFML
     SYSTEM)
 FetchContent_MakeAvailable(SFML)
 
-#target_link_libraries(main PRIVATE SFML::Graphics)
+# Use GLVND libraries if available
+if(POLICY CMP0072)
+  cmake_policy(SET CMP0072 NEW)
+endif()
+
+# also tell CMake which to prefer
+set(OpenGL_GL_PREFERENCE GLVND)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)

@@ -1,16 +1,23 @@
 #pragma once
 
 #include <stdexcept>
+#include <string>
 #include <filesystem>
 
 #include <iostream>
+
+#include <nlohmann/json.hpp>
 
 #include "voicevox_core.h"
 
 namespace voicevox
 {
 
+
 void throw_if_err(VoicevoxResultCode result);
+
+// forward declare of synthesizer for AudioQuery
+class Synthesizer;
 
 /**
  * \brief c++ wrapper for Voicevox WAV
@@ -109,6 +116,22 @@ public:
 
 private:
     VoicevoxVoiceModelFile * model_;
+};
+
+class AudioQuery 
+{
+public:
+    AudioQuery(
+        Synthesizer& synth,
+        std::string text,
+        uint32_t style_id
+    );
+
+    // get json
+    const nlohmann::json& get() const;
+    
+private:
+    nlohmann::json json_;
 };
 
 }

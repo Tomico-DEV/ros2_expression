@@ -1,0 +1,5 @@
+<library path="speaker_panel">
+  <class type="qtexpression_controller::SpeakerPanel" base_class_type="rviz_common::Panel">
+    <description>Panel for interfacing with speak action.</description>
+  </class>
+</library>

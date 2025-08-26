@@ -3,10 +3,17 @@
 namespace voicevox
 {
 
-VVSpeakerNode::VVSpeakerNode()
-: Node("voicevox_speaker"), sound_ { buffer_ }
+std::u32string to_utf32(const std::string & input) 
 {
-    std::string text { "こんにちは" };
+    std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> conv;
+    return conv.from_bytes(input);
+}
+
+VVSpeakerNode::VVSpeakerNode(const rclcpp::NodeOptions & options)
+: Node { "voicevox_speaker", options }, sound_ { buffer_ }
+{
+    declare_params_();
+    init_action_server_();
 
     p_voicevox_ = std::make_unique<Voicevox>(
         dict_path_,
@@ -14,22 +21,10 @@ VVSpeakerNode::VVSpeakerNode()
         model_paths_,
         voicevox_make_default_initialize_options()
     );
-    
-    
-    WavAudio result = p_voicevox_->synthesize(text, 3, false);
-    
-    
-    // Playback with SFML
-    if (!buffer_.loadFromMemory(result.get_data(), result.get_size()))
-    {
-        throw std::runtime_error("Coudln't load WAV from memory!");
-    }
-    
-    sound_.play();
 
 }
 
-void VVSpeakerNode::declare_params()
+void VVSpeakerNode::declare_params_()
 {
     typedef rcl_interfaces::msg::ParameterDescriptor ParamDesc;
     
@@ -52,7 +47,7 @@ void VVSpeakerNode::declare_params()
     );
     ort_path_ = declare_parameter<std::string>(
         "voicevox.onnxruntime_lib_path",
-        dict_path.string(),
+        ort_path.string(),
         make_desc("Path to onnxruntime library")
     );
     auto model_pathstrings = declare_parameter<std::vector<std::string>>(
@@ -68,8 +63,94 @@ void VVSpeakerNode::declare_params()
         std::back_inserter(model_paths_),
         [](const std::string& s) { return std::filesystem::path { s }; }
     );
+}
 
+void VVSpeakerNode::tts_(const std::string& text)
+{
+    std::u32string jp_string = to_utf32(text);
+    bool question = ((jp_string.back() == '?') | (jp_string.back() == U'？'));
+    WavAudio result = p_voicevox_->tts(text, speaker_id_, question);
+
+    // Playback with SFML
+    if (!buffer_.loadFromMemory(result.get_data(), result.get_size()))
+    {
+        throw std::runtime_error("Coudln't load WAV from memory!");
+    }
     
+    sound_.play();
+}
+
+void VVSpeakerNode::synthesize_(std::shared_ptr<AudioQuery> p_query)
+{
+    std::cout << p_query->get().dump(4) << "\n";
+}
+
+void VVSpeakerNode::init_action_server_()
+{
+    action_server_ = rclcpp_action::create_server<SpeakAction>(
+        this,
+        "speak",
+        std::bind(&VVSpeakerNode::handle_speak_goal_, this, 
+            std::placeholders::_1, std::placeholders::_2),
+        std::bind(&VVSpeakerNode::handle_speak_cancel_, this,
+            std::placeholders::_1),
+        std::bind(&VVSpeakerNode::handle_accepted_, this,
+            std::placeholders::_1)
+    );
+}
+
+auto VVSpeakerNode::handle_speak_goal_(
+    const rclcpp_action::GoalUUID & uuid,
+    std::shared_ptr<const SpeakAction::Goal> goal
+) -> rclcpp_action::GoalResponse
+{
+    RCLCPP_INFO(get_logger(), "Got goal: %s", goal->text.c_str());
+    
+    std::shared_ptr<AudioQuery> p_query;
+    
+    try
+    {
+        p_query = std::make_shared<AudioQuery>(
+            p_voicevox_->make_audio_query(goal->text, speaker_id_)
+        );
+    }
+    catch (const std::exception& e)
+    {
+        RCLCPP_WARN(get_logger(), "Failed to make audio query!: %s", e.what());
+        return rclcpp_action::GoalResponse::REJECT;
+    }
+    (void)uuid;
+
+    // parse ok -- override current sound
+    if (sound_.getStatus() == sf::SoundSource::Status::Playing)
+        sound_.stop();
+    
+    synthesize_(p_query);
+        
+    return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;  
+}
+
+auto VVSpeakerNode::handle_speak_cancel_(
+    const std::shared_ptr<GoalHandleSpeak> goal_handle
+) -> rclcpp_action::CancelResponse
+{
+    RCLCPP_INFO(get_logger(), "Cancelling goal..");
+    (void)goal_handle;
+    return rclcpp_action::CancelResponse::ACCEPT;
+}
+
+void VVSpeakerNode::handle_accepted_(
+    const std::shared_ptr<GoalHandleSpeak> goal_handle
+)
+{
+    // needs to return quickly so we don't block the executor
+    // placeholder to see if we can even build
+     auto result = std::make_shared<SpeakAction::Result>();
+     result->success = true;
+    goal_handle->succeed(result);
+    RCLCPP_INFO(get_logger(), "Goal succeeded");
 }
 
 }
+
+RCLCPP_COMPONENTS_REGISTER_NODE(voicevox::VVSpeakerNode)

@@ -28,9 +28,21 @@ Voicevox::Voicevox(
     p_synth_->load_models(model_paths);
 }
 
-auto Voicevox::synthesize(
+auto Voicevox::make_audio_query(
     const std::string& text,
-    uint8_t style_id,
+    uint32_t style_id
+) -> AudioQuery
+{
+    return AudioQuery { 
+        *p_synth_,
+        text,
+        style_id
+    };
+}
+
+auto Voicevox::tts(
+    const std::string& text,
+    uint32_t style_id,
     bool interrogative
 ) -> WavAudio
 {
@@ -43,6 +55,30 @@ auto Voicevox::synthesize(
     throw_if_err(
         voicevox_synthesizer_tts(
             p_synth_->get(), text.c_str(), style_id, options,
+            &output_wav_size, &output_wav
+        )
+    );
+
+    return WavAudio { output_wav_size, output_wav };
+}
+
+auto Voicevox::synthesize(
+    const AudioQuery& query,
+    uint32_t style_id,
+    bool interrogative // not sure why we need this since query should have it
+)-> WavAudio
+{
+    size_t output_wav_size = 0;
+    uint8_t * output_wav = nullptr;
+
+    VoicevoxSynthesisOptions options;
+    options.enable_interrogative_upspeak = interrogative;
+
+    throw_if_err(
+        voicevox_synthesizer_synthesis(
+            p_synth_->get(),
+            query.get().dump().c_str(),
+            style_id, options,
             &output_wav_size, &output_wav
         )
     );
