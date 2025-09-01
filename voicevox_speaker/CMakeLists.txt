@@ -99,7 +99,10 @@ set(RHUBARB_INCLUDE ${RHUBARB_DIR}/include)
 
 add_library(rhubarb-tools
   ${RHUBARB_SRC}/tools/exceptions.cpp
+	${RHUBARB_SRC}/tools/exceptions.cpp
+	${RHUBARB_SRC}/tools/tools.cpp
 )
+
 target_include_directories(rhubarb-tools PUBLIC ${RHUBARB_INCLUDE})
 
 add_library(rhubarb-logging

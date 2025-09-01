@@ -8,6 +8,10 @@
 
 #include <nlohmann/json.hpp>
 
+// rhubarb
+#include "time/BoundedTimeline.h"
+#include "core/Phone.h"
+
 #include "voicevox_core.h"
 
 namespace voicevox
@@ -126,14 +130,19 @@ public:
         std::string text,
         uint32_t style_id
     );
-    
+
     uint get_query_length() const;
 
     nlohmann::json get_chunk(uint i) const;
     // get json
     const nlohmann::json& get() const;
+
+    BoundedTimeline<Phone> to_timeline() const;
     
 private:
+    static Phone cons_to_phone_ (std::string cons);
+    static Phone vow_to_phone_ (std::string vow);
+
     nlohmann::json json_;
 };
 

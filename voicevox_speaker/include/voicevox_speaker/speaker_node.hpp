@@ -2,7 +2,6 @@
 
 #include <atomic> 
 #include <thread>
-
 #include <functional>
 #include <codecvt>
 #include <locale>
@@ -18,6 +17,8 @@
 #include "voicevox_speaker/voicevox.hpp"
 #include "voicevox_speaker/synthesis_stream.hpp"
 #include "voicevox_speaker/visibility_control.h"
+
+#include "animation/mouthAnimation.h"
 
 #include "speaker_actions/action/speak.hpp"
 
@@ -60,8 +61,6 @@ private:
         const std::shared_ptr<GoalHandleSpeak> goal_handle
     );
     void stop_playback_();
-    
-
 
     std::filesystem::path dict_path_;
     std::filesystem::path ort_path_;

@@ -65,4 +65,141 @@ const nlohmann::json& AudioQuery::get() const
     return json_;
 }
 
+centiseconds sec2centi(double secs)
+{
+    return std::chrono::round<centiseconds>(
+        std::chrono::duration<double>(secs)
+    );
+
+}
+
+auto AudioQuery::to_timeline() const -> BoundedTimeline<Phone>
+{
+    std::vector<Timed<Phone>> phones_;
+    double cumul_time = 0.0;
+    for (const auto& phrase : json_["accent_phrases"])
+    {
+        for (const auto& mora : phrase["moras"])
+        {
+            // consonants
+            if (!mora["consonant"].is_null())
+            {
+                double start_t = cumul_time;
+                double end_t = cumul_time + mora["consonant_length"].get<double>();
+                Timed<Phone> t_phone {
+                    sec2centi(start_t),
+                    sec2centi(end_t),
+                    cons_to_phone_(mora["consonant"].get<std::string>())
+                };
+                phones_.push_back(t_phone);
+                cumul_time = end_t;
+            }
+            // vowels
+            if (!mora["vowel"].is_null())
+            {
+                double start_t = cumul_time;
+                double end_t = cumul_time + mora["vowel_length"].get<double>();
+                Timed<Phone> t_phone {
+                    sec2centi(start_t),
+                    sec2centi(end_t),
+                    vow_to_phone_(mora["vowel"].get<std::string>())
+                };
+                phones_.push_back(t_phone);
+                cumul_time = end_t;
+            }
+        }
+        // pause
+        const auto& pause = phrase["pause_mora"];
+        if (!pause.is_null())
+        {
+            // sanity check
+            if (pause["vowel"].get<std::string>() != "pau")
+                throw std::runtime_error(
+                    std::format("Unknown pause vowel: {}", pause["vowel"].get<std::string>())
+                );
+            cumul_time += pause["vowel_length"].get<double>();
+        }
+    }
+
+    // create timeline
+    BoundedTimeline<Phone> timeline { TimeRange{sec2centi(0), sec2centi(cumul_time)} };
+    for (const auto& t_phone : phones_)
+    {
+        timeline.set(t_phone);
+    }
+
+    return timeline;
+}
+
+auto AudioQuery::cons_to_phone_(std::string cons) -> Phone
+{
+    static const std::unordered_map<std::string, Phone> table = {
+        // K/G
+        {"k",  Phone::K},   // カ行
+        {"g",  Phone::G},   // ガ行
+
+        // S/Z
+        {"s",  Phone::S},   // サ行
+        {"z",  Phone::Z},   // ザ行
+        {"sh", Phone::SH},  // シ
+        {"j",  Phone::JH},  // ジ
+
+        // T/D
+        {"t",  Phone::T},   // タ行
+        {"d",  Phone::D},   // ダ行
+        {"ch", Phone::CH},  // チ
+        {"ts", Phone::S},   // ツ (special)
+
+
+        // H/F/B/P
+        {"h",  Phone::HH},  // ハ行
+        {"f",  Phone::F},   // フ
+        {"b",  Phone::B},   // バ行
+        {"p",  Phone::P},   // パ行
+
+        // N
+        {"n",  Phone::N},   // ナ行
+
+        // M
+        {"m",  Phone::M},   // マ行
+
+        // Y
+        {"y",  Phone::Y},   // ヤ行
+
+        // R
+        {"r",  Phone::R},   // ラ行
+
+        // W
+        {"w",  Phone::W},   // ワ行
+    };
+
+    auto it = table.find(cons);
+    if (it != table.end())
+        return it->second;
+
+    throw std::runtime_error(std::format("Unknown consonant: {}", cons));
+}
+
+auto AudioQuery::vow_to_phone_(std::string vow) -> Phone
+{
+    static const std::unordered_map<std::string, Phone> table = {
+        // あいうえお
+        {"a", Phone::AA},
+        {"i", Phone::IY},
+        {"u", Phone::UW},
+        {"e", Phone::EY},
+        {"o", Phone::OW},
+        // ん
+        {"N", Phone::N},
+        // す (u) after s
+        {"U", Phone::S}
+    };
+
+    auto it = table.find(vow);
+    if (it != table.end())
+        return it->second;
+
+    throw std::runtime_error(std::format("Unknown vowel: {}", vow));
+}
+
 }

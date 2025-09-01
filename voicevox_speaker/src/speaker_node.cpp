@@ -106,6 +106,8 @@ auto VVSpeakerNode::handle_speak_cancel_(
 {
     RCLCPP_INFO(get_logger(), "Cancelling goal..");
     (void)goal_handle;
+    running_.store(false);
+
     return rclcpp_action::CancelResponse::ACCEPT;
 }
 
@@ -130,10 +132,66 @@ void VVSpeakerNode::playback_(
     SynthesisStream synth_stream_ {
         *p_query_, speaker_id_, p_voicevox_
     };
+    // parse audioquery to visemes
+    BoundedTimeline<Phone> phone_timeline = p_query_->to_timeline();
+    ShapeSet shapes { ShapeConverter::get().getBasicShapes() };
+    // add extra shapes
+    shapes.insert(Shape::G);
+    shapes.insert(Shape::H);
+    shapes.insert(Shape::X);
+    JoiningContinuousTimeline<Shape> viseme_timeline = 
+        animate(phone_timeline, shapes);
+    
+    const int update_rate = 100;
+    const auto update_dt = std::chrono::milliseconds(1000 / update_rate);
+
+    auto start_time = std::chrono::steady_clock::now();
+    centiseconds elapsed_time { 0 }; // elapsed time
+    centiseconds end_time = viseme_timeline.getRange().getEnd(); // end time in centiseconds
+
+    Shape viseme { Shape::X };
+    
+    // start audio playback and viseme playback at the same time
     synth_stream_.play();
+
+    while (elapsed_time < end_time)
+    {
+        if (goal_handle->is_canceling())
+        {
+            goal_handle->canceled(std::make_shared<SpeakAction::Result>());
+            running_.store(false);
+            synth_stream_.cancel();
+            return;
+        }
+
+        auto now = std::chrono::steady_clock::now();
+        elapsed_time = std::chrono::round<centiseconds>(now - start_time);
+
+        if (elapsed_time > end_time)
+            break;
+        
+        // sample from timeline
+        auto opt = viseme_timeline.get(elapsed_time);
+        viseme = opt ? opt->getValue() : Shape::X;
+
+        SpeakAction::Feedback feedback;
+        std::ostringstream oss;
+        oss << viseme;
+        feedback.viseme = oss.str();
+        feedback.duration.sec = 0; // placeholder for now, will impl properly later
+        feedback.duration.nanosec = 0;
+        feedback.volume = 1.0;
+        goal_handle->publish_feedback(std::make_shared<SpeakAction::Feedback>(feedback));
+
+        std::this_thread::sleep_for(update_dt);
+    }
+
     
     // wait for cancel or for the playback to finish
-    while (running_.load() and synth_stream_.getStatus() == sf::SoundSource::Status::Playing);
+    while (running_.load() && synth_stream_.getStatus() == sf::SoundSource::Status::Playing)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
 
     synth_stream_.cancel();
     running_.store(false);
