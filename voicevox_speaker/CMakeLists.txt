@@ -1,9 +1,14 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.10)
 project(voicevox_speaker)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
+
+# Enable C++20
+set(CMAKE_CXX_STANDARD 20) 
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 #------------------------Voicevox stuff----------------------------
 # paths
@@ -86,7 +91,63 @@ FetchContent_Declare(SFML
 )
 FetchContent_MakeAvailable(SFML)
 
-# -------------------------------ROS2-----------------------------
+#----------------------------Rhubarb------------------------------
+
+set(RHUBARB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/rhubarb-lite/rhubarb)
+set(RHUBARB_SRC ${RHUBARB_DIR}/src)
+set(RHUBARB_INCLUDE ${RHUBARB_DIR}/include)
+
+add_library(rhubarb-tools
+  ${RHUBARB_SRC}/tools/exceptions.cpp
+)
+target_include_directories(rhubarb-tools PUBLIC ${RHUBARB_INCLUDE})
+
+add_library(rhubarb-logging
+	${RHUBARB_SRC}/logging/Entry.cpp
+	${RHUBARB_SRC}/logging/formatters.cpp
+	${RHUBARB_SRC}/logging/Level.cpp
+	${RHUBARB_SRC}/logging/logging.cpp
+	${RHUBARB_SRC}/logging/sinks.cpp
+)
+target_include_directories(rhubarb-tools PUBLIC ${RHUBARB_INCLUDE})
+target_link_libraries(rhubarb-logging
+  rhubarb-tools
+)
+
+add_library(rhubarb-core
+  ${RHUBARB_SRC}/core/Phone.cpp
+  ${RHUBARB_SRC}/core/Shape.cpp  
+)
+target_include_directories(rhubarb-core PUBLIC ${RHUBARB_INCLUDE})
+
+add_library(rhubarb-time
+  ${RHUBARB_SRC}/time/centiseconds.cpp
+  ${RHUBARB_SRC}/time/TimeRange.cpp
+)
+target_include_directories(rhubarb-time PUBLIC ${RHUBARB_INCLUDE})
+target_link_libraries(rhubarb-time
+  rhubarb-logging
+)
+
+add_library(rhubarb-animation
+	${RHUBARB_SRC}/animation/animationRules.cpp
+	${RHUBARB_SRC}/animation/mouthAnimation.cpp
+	${RHUBARB_SRC}/animation/pauseAnimation.cpp
+	${RHUBARB_SRC}/animation/roughAnimation.cpp
+	${RHUBARB_SRC}/animation/ShapeRule.cpp
+	${RHUBARB_SRC}/animation/staticSegments.cpp
+	${RHUBARB_SRC}/animation/targetShapeSet.cpp
+	${RHUBARB_SRC}/animation/timingOptimization.cpp
+	${RHUBARB_SRC}/animation/tweening.cpp
+)
+target_include_directories(rhubarb-animation PUBLIC ${RHUBARB_INCLUDE})
+target_link_libraries(rhubarb-animation
+  rhubarb-core
+  rhubarb-logging
+  rhubarb-time
+)
+
+# -----------------------------ROS2-------------------------------
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -124,6 +185,7 @@ ament_target_dependencies(speak_action_server
 )
 target_link_libraries(speak_action_server
   voicevox_core
+  rhubarb-animation
   SFML::Audio
   nlohmann_json::nlohmann_json
 )

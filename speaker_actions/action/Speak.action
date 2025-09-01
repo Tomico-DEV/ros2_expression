@@ -1,5 +1,7 @@
 # text to speak
 string text
+# if the request should cancel any currently playing audio
+bool canceling
 ---
 # false if errors
 bool success

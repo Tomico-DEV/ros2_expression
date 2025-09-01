@@ -13,13 +13,13 @@ window_name_ { name }, size_ { size }, style_ { style }
 
 void PuppetWindow::start()
 {
-    running_ = true;
+    running_.store(true);
     window_thread_ = std::thread(&PuppetWindow::update_window_, this);
 }
 
 void PuppetWindow::stop()
 {
-    running_ = false;
+    running_.store(false);
     if (window_thread_.joinable())
     {
         window_thread_.join();
@@ -53,7 +53,7 @@ void PuppetWindow::update_window_()
 
     sf::Vector2i prev_mouse_pos = sf::Mouse::getPosition(window_);
 
-    while (running_)
+    while (running_.load())
     {
         sf::Vector2i cur_mouse_pos = sf::Mouse::getPosition(window_);
         sf::Vector2i delta = cur_mouse_pos - prev_mouse_pos;
@@ -65,7 +65,7 @@ void PuppetWindow::update_window_()
             if (event->is<sf::Event::Closed>())
             {
                 window_.close();
-                running_ = false;
+                running_.store(false);
                 if (close_callback_)
                     close_callback_();
             }
@@ -245,7 +245,7 @@ auto PuppetWindow::get_params() -> std::future<std::shared_ptr<puppet_params_t>>
 void PuppetWindow::reload_puppet()
 {
     std::lock_guard<std::mutex> lock { *p_window_mutex_ };
-    if (running_)
+    if (running_.load())
     {
         (void) window_.setActive(true);
         if (p_puppet_)

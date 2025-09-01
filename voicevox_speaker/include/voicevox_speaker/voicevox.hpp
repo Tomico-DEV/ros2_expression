@@ -58,13 +58,26 @@ public:
      * \brief synthesize audio from AudioQuery
      * \param query audio query
      * \param style_id which model to use
-     * \param interrogative question or not
+     * \param interrogative interrogative tone or not
      * \return WavAudio object containing audio data
      */
     WavAudio synthesize(
         const AudioQuery& query,
         uint32_t style_id,
         bool interrogative 
+    );
+
+    /**
+     * \brief synthesize audio from AudioQuery at ith chunk
+     * \param query audio query
+     * \param i which chunk to synthesize
+     * \param style_id which model to use
+     * \return WavAudio object containing audio data
+     */
+    WavAudio synthesize_chunk(
+        const AudioQuery& query,
+        uint i,
+        uint32_t style_id
     );
 
 private:

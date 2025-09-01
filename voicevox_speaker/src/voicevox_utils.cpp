@@ -30,6 +30,26 @@ AudioQuery::AudioQuery(
     voicevox_json_free(raw_string);
 }
 
+uint AudioQuery::get_query_length() const
+{
+    return json_["accent_phrases"].size();
+}
+
+nlohmann::json AudioQuery::get_chunk(uint i) const
+{
+    if (!json_.contains("accent_phrases") || !json_["accent_phrases"].is_array()) {
+        throw std::runtime_error("JSON does not contain accent_phrases array!");
+    }
+    if (i >= json_["accent_phrases"].size()) {
+        throw std::out_of_range("Accent phrase index out of range");
+    }
+
+    nlohmann::json chunk = json_;
+    chunk["accent_phrases"] = nlohmann::json::array({ json_["accent_phrases"][i] });
+
+    return chunk;
+}
+
 const nlohmann::json& AudioQuery::get() const
 {
     return json_;

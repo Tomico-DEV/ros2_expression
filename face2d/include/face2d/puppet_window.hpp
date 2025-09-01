@@ -99,7 +99,7 @@ private:
 
     
     // thread and sfml
-    std::atomic<bool> running_ = false;
+    std::atomic<bool> running_ { false };
     std::thread window_thread_;
     std::shared_ptr<std::mutex> p_window_mutex_;
     sf::Window window_;

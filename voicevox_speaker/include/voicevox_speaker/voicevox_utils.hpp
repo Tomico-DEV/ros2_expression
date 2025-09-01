@@ -127,11 +127,16 @@ public:
         uint32_t style_id
     );
 
+    uint get_query_length() const;
+
+    nlohmann::json get_chunk(uint i) const;
     // get json
     const nlohmann::json& get() const;
     
 private:
     nlohmann::json json_;
 };
+
+
 
 }

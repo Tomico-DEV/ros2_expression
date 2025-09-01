@@ -65,7 +65,7 @@ auto Voicevox::tts(
 auto Voicevox::synthesize(
     const AudioQuery& query,
     uint32_t style_id,
-    bool interrogative // not sure why we need this since query should have it
+    bool interrogative
 )-> WavAudio
 {
     size_t output_wav_size = 0;
@@ -78,6 +78,30 @@ auto Voicevox::synthesize(
         voicevox_synthesizer_synthesis(
             p_synth_->get(),
             query.get().dump().c_str(),
+            style_id, options,
+            &output_wav_size, &output_wav
+        )
+    );
+
+    return WavAudio { output_wav_size, output_wav };
+}
+
+auto Voicevox::synthesize_chunk(
+    const AudioQuery& query,
+    uint i,
+    uint32_t style_id
+)-> WavAudio
+{
+    size_t output_wav_size = 0;
+    uint8_t * output_wav = nullptr;
+
+    VoicevoxSynthesisOptions options = voicevox_make_default_synthesis_options();
+    // options.enable_interrogative_upspeak = interrogative;
+
+    throw_if_err(
+        voicevox_synthesizer_synthesis(
+            p_synth_->get(),
+            query.get_chunk(i).dump().c_str(),
             style_id, options,
             &output_wav_size, &output_wav
         )

@@ -10,12 +10,12 @@ std::u32string to_utf32(const std::string & input)
 }
 
 VVSpeakerNode::VVSpeakerNode(const rclcpp::NodeOptions & options)
-: Node { "voicevox_speaker", options }, sound_ { buffer_ }
+: Node { "voicevox_speaker", options } /* sound_ { buffer_ } */
 {
     declare_params_();
     init_action_server_();
 
-    p_voicevox_ = std::make_unique<Voicevox>(
+    p_voicevox_ = std::make_shared<Voicevox>(
         dict_path_,
         ort_path_,
         model_paths_,
@@ -65,6 +65,7 @@ void VVSpeakerNode::declare_params_()
     );
 }
 
+/*
 void VVSpeakerNode::tts_(const std::string& text)
 {
     std::u32string jp_string = to_utf32(text);
@@ -79,11 +80,28 @@ void VVSpeakerNode::tts_(const std::string& text)
     
     sound_.play();
 }
+*/
 
-void VVSpeakerNode::synthesize_(std::shared_ptr<AudioQuery> p_query)
+/*
+void VVSpeakerNode::synthesize_(
+    std::shared_ptr<AudioQuery> p_query,
+    const std::string& text
+)
 {
     std::cout << p_query->get().dump(4) << "\n";
+    std::u32string jp_string = to_utf32(text);
+    bool question = ((jp_string.back() == '?') | (jp_string.back() == U'？'));
+    WavAudio result = p_voicevox_->synthesize(*p_query, speaker_id_, question);
+
+    // Playback with SFML
+    if (!buffer_.loadFromMemory(result.get_data(), result.get_size()))
+    {
+        throw std::runtime_error("Coudln't load WAV from memory!");
+    }
+    
+    sound_.play();
 }
+*/
 
 void VVSpeakerNode::init_action_server_()
 {
@@ -106,11 +124,9 @@ auto VVSpeakerNode::handle_speak_goal_(
 {
     RCLCPP_INFO(get_logger(), "Got goal: %s", goal->text.c_str());
     
-    std::shared_ptr<AudioQuery> p_query;
-    
     try
     {
-        p_query = std::make_shared<AudioQuery>(
+        p_query_ = std::make_shared<AudioQuery>(
             p_voicevox_->make_audio_query(goal->text, speaker_id_)
         );
     }
@@ -122,11 +138,9 @@ auto VVSpeakerNode::handle_speak_goal_(
     (void)uuid;
 
     // parse ok -- override current sound
-    if (sound_.getStatus() == sf::SoundSource::Status::Playing)
-        sound_.stop();
+    if (running_.load())
+        stop_playback_();
     
-    synthesize_(p_query);
-        
     return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;  
 }
 
@@ -144,11 +158,29 @@ void VVSpeakerNode::handle_accepted_(
 )
 {
     // needs to return quickly so we don't block the executor
-    // placeholder to see if we can even build
-     auto result = std::make_shared<SpeakAction::Result>();
-     result->success = true;
-    goal_handle->succeed(result);
-    RCLCPP_INFO(get_logger(), "Goal succeeded");
+    playback_thread_ = std::jthread {
+        &VVSpeakerNode::playback_,
+        this,
+        goal_handle
+    };
+}
+
+void VVSpeakerNode::playback_(
+    const std::shared_ptr<GoalHandleSpeak> goal_handle
+)
+{
+    running_.store(true);
+    // create synthesis stream
+    SynthesisStream synth_stream_ {
+        *p_query_, speaker_id_, p_voicevox_
+    };
+    synth_stream_.play();
+    
+    // wait for cancel or for the playback to finish
+    while (running_.load() and synth_stream_.getStatus() == sf::SoundSource::Status::Playing);
+
+    synth_stream_.cancel();
+    running_.store(false);
 }
 
 }

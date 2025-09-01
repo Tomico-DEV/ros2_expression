@@ -1,0 +1,3 @@
+[submodule "voicevox_speaker/external/rhubarb-lite"]
+	path = voicevox_speaker/external/rhubarb-lite
+	url = git@github.com:Tomico-DEV/rhubarb-lite.git
