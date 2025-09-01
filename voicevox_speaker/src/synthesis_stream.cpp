@@ -31,7 +31,7 @@ SynthesisStream::SynthesisStream(
             try 
             {
                 const uint query_len = query_.get_query_length();
-                for (int i = 1; i < query_len and running_.load(); ++i)
+                for (uint i = 1; i < query_len and running_.load(); ++i)
                 {
                     synthesize(i);
                 }
@@ -101,7 +101,10 @@ void SynthesisStream::synthesize(uint i)
         
         {
             WavAudio wav { vv_->synthesize_chunk(query_, i, style_id_) };
-            buf.loadFromMemory(wav.get_data(), wav.get_size());
+            if (!buf.loadFromMemory(wav.get_data(), wav.get_size()))
+                throw std::runtime_error(
+                    "Failed to load synthesized wav from memory!"
+                );
         }
 
         {

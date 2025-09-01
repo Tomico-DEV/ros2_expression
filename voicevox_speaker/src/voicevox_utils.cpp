@@ -11,6 +11,12 @@ void throw_if_err(VoicevoxResultCode result)
         throw std::runtime_error(voicevox_error_result_to_message(result));
 }
 
+std::u32string to_utf32(const std::string & input) 
+{
+    std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> conv;
+    return conv.from_bytes(input);
+}
+
 AudioQuery::AudioQuery(
     Synthesizer& synth,
     std::string text,
@@ -28,6 +34,10 @@ AudioQuery::AudioQuery(
     json_ = nlohmann::json::parse(raw_string);
 
     voicevox_json_free(raw_string);
+
+    std::u32string jp_string = to_utf32(text);
+    bool question = ((jp_string.back() == '?') | (jp_string.back() == U'？'));
+    json_["accent_phrases"].back()["is_interrogative"] = question;
 }
 
 uint AudioQuery::get_query_length() const

@@ -33,8 +33,8 @@ private:
     inline void onSeek(sf::Time) override {}; // unsupported
     void synthesize(uint i);
 
-    uint32_t style_id_;
     AudioQuery query_;
+    uint32_t style_id_;
     std::shared_ptr<Voicevox> vv_;
 
     std::queue<sf::SoundBuffer> wav_queue_;

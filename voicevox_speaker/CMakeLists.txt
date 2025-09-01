@@ -161,6 +161,7 @@ find_package(nlohmann_json REQUIRED)
 add_library(speak_action_server SHARED
   src/voicevox_speaker.cpp
   src/speaker_node.cpp
+  src/synthesis_stream.cpp
   src/synthesizer.cpp
   src/voicevox.cpp
   src/voicevox_utils.cpp

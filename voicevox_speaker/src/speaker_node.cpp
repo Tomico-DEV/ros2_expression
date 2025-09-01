@@ -3,12 +3,6 @@
 namespace voicevox
 {
 
-std::u32string to_utf32(const std::string & input) 
-{
-    std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> conv;
-    return conv.from_bytes(input);
-}
-
 VVSpeakerNode::VVSpeakerNode(const rclcpp::NodeOptions & options)
 : Node { "voicevox_speaker", options } /* sound_ { buffer_ } */
 {
@@ -64,44 +58,6 @@ void VVSpeakerNode::declare_params_()
         [](const std::string& s) { return std::filesystem::path { s }; }
     );
 }
-
-/*
-void VVSpeakerNode::tts_(const std::string& text)
-{
-    std::u32string jp_string = to_utf32(text);
-    bool question = ((jp_string.back() == '?') | (jp_string.back() == U'？'));
-    WavAudio result = p_voicevox_->tts(text, speaker_id_, question);
-
-    // Playback with SFML
-    if (!buffer_.loadFromMemory(result.get_data(), result.get_size()))
-    {
-        throw std::runtime_error("Coudln't load WAV from memory!");
-    }
-    
-    sound_.play();
-}
-*/
-
-/*
-void VVSpeakerNode::synthesize_(
-    std::shared_ptr<AudioQuery> p_query,
-    const std::string& text
-)
-{
-    std::cout << p_query->get().dump(4) << "\n";
-    std::u32string jp_string = to_utf32(text);
-    bool question = ((jp_string.back() == '?') | (jp_string.back() == U'？'));
-    WavAudio result = p_voicevox_->synthesize(*p_query, speaker_id_, question);
-
-    // Playback with SFML
-    if (!buffer_.loadFromMemory(result.get_data(), result.get_size()))
-    {
-        throw std::runtime_error("Coudln't load WAV from memory!");
-    }
-    
-    sound_.play();
-}
-*/
 
 void VVSpeakerNode::init_action_server_()
 {
@@ -181,7 +137,15 @@ void VVSpeakerNode::playback_(
 
     synth_stream_.cancel();
     running_.store(false);
+    
+    if (rclcpp::ok()) {
+        auto result = std::make_shared<SpeakAction::Result>();
+        result->success = true;
+        goal_handle->succeed(result);
+        RCLCPP_INFO(this->get_logger(), "Goal succeeded");
+    }
 }
+
 
 }
 
