@@ -59,6 +59,7 @@ void SpeakerPanel::create_layout_()
     layout->addWidget(cancel_button_);
 
     QObject::connect(send_button_, &QPushButton::released, this, &SpeakerPanel::send_speak_goal_);
+    QObject::connect(cancel_button_, &QPushButton::released, this, &SpeakerPanel::cancel_speak_goal_);
 }
 
 void SpeakerPanel::set_result_color_(Qt::GlobalColor color)
@@ -120,7 +121,20 @@ void SpeakerPanel::send_speak_goal_()
 
     result_->setText("Goal sent..");
     set_result_color_(Qt::black);
-    
+}
+
+void SpeakerPanel::cancel_speak_goal_()
+{
+    if (!active_goal_) {
+        RCLCPP_INFO(rclcpp::get_logger("SpeakerPanel"), "No active goal to cancel");
+        result_->setText("No active goal");
+        set_result_color_(Qt::red);
+        return;
+    }
+
+    auto future_cancel = client_ptr_->async_cancel_goal(active_goal_);
+    result_->setText("Canceling..");
+    set_result_color_(Qt::black);
 }
 
 void SpeakerPanel::response_callback_(
@@ -137,6 +151,8 @@ void SpeakerPanel::response_callback_(
         result_->setText("Goal Accepted");
         set_result_color_(Qt::black);
     }
+
+    active_goal_ = goal_handle;
 }
 
 void SpeakerPanel::feedback_callback_(
@@ -178,6 +194,8 @@ void SpeakerPanel::result_callback_(
         result_->setText("Failed");
         set_result_color_(Qt::red);
     }
+
+    active_goal_.reset();
 }
 
 }

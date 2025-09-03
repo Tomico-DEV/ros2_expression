@@ -93,6 +93,8 @@ auto VVSpeakerNode::handle_speak_goal_(
     }
     (void)uuid;
 
+    std::cout << p_query_->get().dump(4) << "\n";
+
     // parse ok -- override current sound
     if (running_.load())
         stop_playback_();
@@ -132,6 +134,7 @@ void VVSpeakerNode::playback_(
     SynthesisStream synth_stream_ {
         *p_query_, speaker_id_, p_voicevox_
     };
+    /*
     // parse audioquery to visemes
     BoundedTimeline<Phone> phone_timeline = p_query_->to_timeline();
     ShapeSet shapes { ShapeConverter::get().getBasicShapes() };
@@ -150,10 +153,12 @@ void VVSpeakerNode::playback_(
     centiseconds end_time = viseme_timeline.getRange().getEnd(); // end time in centiseconds
 
     Shape viseme { Shape::X };
+    */
     
     // start audio playback and viseme playback at the same time
     synth_stream_.play();
 
+    /*
     while (elapsed_time < end_time)
     {
         if (goal_handle->is_canceling())
@@ -185,6 +190,7 @@ void VVSpeakerNode::playback_(
 
         std::this_thread::sleep_for(update_dt);
     }
+    */
 
     
     // wait for cancel or for the playback to finish
@@ -193,7 +199,7 @@ void VVSpeakerNode::playback_(
         std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 
-    synth_stream_.cancel();
+    //synth_stream_.cancel();
     running_.store(false);
     
     if (rclcpp::ok()) {
@@ -204,6 +210,10 @@ void VVSpeakerNode::playback_(
     }
 }
 
+void VVSpeakerNode::stop_playback_()
+{
+    running_.store(false);
+}
 
 }
 

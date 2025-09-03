@@ -35,9 +35,13 @@ AudioQuery::AudioQuery(
 
     voicevox_json_free(raw_string);
 
+    // json modification
     std::u32string jp_string = to_utf32(text);
     bool question = ((jp_string.back() == '?') | (jp_string.back() == U'？'));
     json_["accent_phrases"].back()["is_interrogative"] = question;
+    json_["prePhonemeLength"] = 0.1;
+    json_["postPhonemeLength"] = 0.1;
+
 }
 
 uint AudioQuery::get_query_length() const
@@ -54,6 +58,7 @@ nlohmann::json AudioQuery::get_chunk(uint i) const
         throw std::out_of_range("Accent phrase index out of range");
     }
 
+    // copy json
     nlohmann::json chunk = json_;
     chunk["accent_phrases"] = nlohmann::json::array({ json_["accent_phrases"][i] });
 
@@ -63,6 +68,48 @@ nlohmann::json AudioQuery::get_chunk(uint i) const
 const nlohmann::json& AudioQuery::get() const
 {
     return json_;
+}
+
+double AudioQuery::get_chunk_len(uint i) const
+{
+    if (!json_.contains("accent_phrases") || !json_["accent_phrases"].is_array()) {
+        throw std::runtime_error("JSON does not contain accent_phrases array!");
+    }
+    if (i >= json_["accent_phrases"].size()) {
+        throw std::out_of_range("Accent phrase index out of range");
+    }
+
+    double cumul_time = 0.0;
+    const auto& phrase = json_["accent_phrases"][i];
+    
+    for (const auto& mora : phrase["moras"])
+    {
+        // consonants
+        if (!mora["consonant"].is_null())
+        {
+            cumul_time += mora["consonant_length"].get<double>();
+        }
+        // vowels
+        if (!mora["vowel"].is_null())
+        {
+            cumul_time += mora["vowel_length"].get<double>();
+        }
+    }
+    // pause
+    const auto& pause = phrase["pause_mora"];
+    if (!pause.is_null())
+    {
+        // sanity check
+        if (pause["vowel"].get<std::string>() != "pau")
+            throw std::runtime_error(
+                std::format("Unknown pause vowel: {}", pause["vowel"].get<std::string>())
+            );
+        cumul_time += pause["vowel_length"].get<double>();
+    }
+
+
+    return cumul_time;
+
 }
 
 centiseconds sec2centi(double secs)
@@ -86,12 +133,13 @@ auto AudioQuery::to_timeline() const -> BoundedTimeline<Phone>
             {
                 double start_t = cumul_time;
                 double end_t = cumul_time + mora["consonant_length"].get<double>();
-                Timed<Phone> t_phone {
-                    sec2centi(start_t),
-                    sec2centi(end_t),
-                    cons_to_phone_(mora["consonant"].get<std::string>())
-                };
-                phones_.push_back(t_phone);
+                
+                cons_to_phone_(
+                    mora["consonant"].get<std::string>(),
+                    phones_,
+                    start_t,
+                    end_t
+                );
                 cumul_time = end_t;
             }
             // vowels
@@ -99,12 +147,12 @@ auto AudioQuery::to_timeline() const -> BoundedTimeline<Phone>
             {
                 double start_t = cumul_time;
                 double end_t = cumul_time + mora["vowel_length"].get<double>();
-                Timed<Phone> t_phone {
-                    sec2centi(start_t),
-                    sec2centi(end_t),
-                    vow_to_phone_(mora["vowel"].get<std::string>())
-                };
-                phones_.push_back(t_phone);
+                vow_to_phone_(
+                    mora["vowel"].get<std::string>(),
+                    phones_,
+                    start_t,
+                    end_t
+                );
                 cumul_time = end_t;
             }
         }
@@ -131,8 +179,14 @@ auto AudioQuery::to_timeline() const -> BoundedTimeline<Phone>
     return timeline;
 }
 
-auto AudioQuery::cons_to_phone_(std::string cons) -> Phone
+void AudioQuery::cons_to_phone_ (
+    std::string cons, 
+    std::vector<Timed<Phone>>& phones,
+    double start_t,
+    double end_t
+)
 {
+    // regular phonemes
     static const std::unordered_map<std::string, Phone> table = {
         // K/G
         {"k",  Phone::K},   // カ行
@@ -173,14 +227,69 @@ auto AudioQuery::cons_to_phone_(std::string cons) -> Phone
         {"w",  Phone::W},   // ワ行
     };
 
+    static const std::unordered_map<
+        std::string, 
+        std::vector<std::pair<Phone, double>>
+    > special =
+    {
+        // string, phonemes, duration ratio
+        // Xょ
+        {"ky", {{Phone::K, 0.5}, {Phone::Y, 0.5}}}, // キャ, キュ, キョ
+        {"gy", {{Phone::G, 0.5}, {Phone::Y, 0.5}}}, // ギャ...
+        {"ny", {{Phone::N, 0.5}, {Phone::Y, 0.5}}}, // ニャ...
+        {"hy", {{Phone::HH, 0.5}, {Phone::Y, 0.5}}},// ヒャ...
+        {"by", {{Phone::B, 0.5}, {Phone::Y, 0.5}}}, // ビャ...
+        {"py", {{Phone::P, 0.5}, {Phone::Y, 0.5}}}, // ピャ...
+        {"my", {{Phone::M, 0.5}, {Phone::Y, 0.5}}}, // ミャ...
+        {"ry", {{Phone::R, 0.5}, {Phone::Y, 0.5}}}, // リャ...
+
+        // Other consonant clusters
+        {"ts", {{Phone::T, 0.5}, {Phone::S, 0.5}}}, // ツァ, ツィ, etc.
+    };
+
+    // special check
+    auto special_it = special.find(cons);
+    if (special_it != special.end()) // special case
+    {
+        double duration = end_t - start_t;
+        double head = start_t;
+        const auto& phone_dur_pairs = special_it->second;
+        for (const auto& pair : phone_dur_pairs)
+        {
+            double local_end_t = head + duration * pair.second;
+            Timed<Phone> t_phone {
+                sec2centi(head),
+                sec2centi(local_end_t),
+                pair.first
+            };
+            phones.push_back(t_phone);
+            head = local_end_t;
+        }
+        return;
+    }
+
+    // normal check
     auto it = table.find(cons);
     if (it != table.end())
-        return it->second;
+    {
+        Timed<Phone> t_phone {
+            sec2centi(start_t),
+            sec2centi(end_t),
+            it->second
+        };
+        phones.push_back(t_phone);
+        return;
+    }
 
     throw std::runtime_error(std::format("Unknown consonant: {}", cons));
 }
 
-auto AudioQuery::vow_to_phone_(std::string vow) -> Phone
+void AudioQuery::vow_to_phone_(
+    std::string vow,
+    std::vector<Timed<Phone>>& phones,
+    double start_t,
+    double end_t
+)
 {
     static const std::unordered_map<std::string, Phone> table = {
         // あいうえお
@@ -189,15 +298,31 @@ auto AudioQuery::vow_to_phone_(std::string vow) -> Phone
         {"u", Phone::UW},
         {"e", Phone::EY},
         {"o", Phone::OW},
+        // cut-off vowels
+        {"A", Phone::AA},
+        {"I", Phone::IY},
+        {"U", Phone::UW},
+        {"E", Phone::EY},
+        {"O", Phone::OW},
+        
         // ん
-        {"N", Phone::N},
-        // す (u) after s
-        {"U", Phone::S}
+        {"N", Phone::N}
     };
+
 
     auto it = table.find(vow);
     if (it != table.end())
-        return it->second;
+    {
+        Timed<Phone> t_phone {
+            sec2centi(start_t),
+            sec2centi(end_t),
+            it->second
+        };
+        phones.push_back(t_phone);
+        return;
+    }
+    if (vow == "cl") // っ
+        return; // add nothing
 
     throw std::runtime_error(std::format("Unknown vowel: {}", vow));
 }

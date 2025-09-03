@@ -6,6 +6,8 @@
 
 #include <iostream>
 
+#include <unordered_set>
+
 #include <nlohmann/json.hpp>
 
 // rhubarb
@@ -137,11 +139,28 @@ public:
     // get json
     const nlohmann::json& get() const;
 
+    /**
+     * \brief get length of ith chunk in seconds
+     * \param i ith chunk
+     * \return duration of the chunk 
+     */
+    double get_chunk_len(uint i) const;
+
     BoundedTimeline<Phone> to_timeline() const;
     
 private:
-    static Phone cons_to_phone_ (std::string cons);
-    static Phone vow_to_phone_ (std::string vow);
+    static void cons_to_phone_(
+        std::string cons, 
+        std::vector<Timed<Phone>>& phones,
+        double start_t,
+        double end_t
+    );
+    static void vow_to_phone_(
+        std::string vow,
+        std::vector<Timed<Phone>>& phones,
+        double start_t,
+        double end_t
+    );
 
     nlohmann::json json_;
 };

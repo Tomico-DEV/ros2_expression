@@ -32,6 +32,7 @@ public:
 protected:
     std::shared_ptr<rviz_common::ros_integration::RosNodeAbstractionIface> node_ptr_;
     rclcpp_action::Client<SpeakAction>::SharedPtr client_ptr_;
+    rclcpp_action::ClientGoalHandle<SpeakAction>::SharedPtr active_goal_;
 
     // gui
     QLineEdit * input_text_;
@@ -42,6 +43,7 @@ protected:
 
 private Q_SLOTS:
     void send_speak_goal_();
+    void cancel_speak_goal_();
     
 private:
     void create_layout_();

@@ -1,3 +1,6 @@
 [submodule "voicevox_speaker/external/rhubarb-lite"]
 	path = voicevox_speaker/external/rhubarb-lite
 	url = git@github.com:Tomico-DEV/rhubarb-lite.git
+[submodule "voicevox_speaker/external/concurrentqueue"]
+	path = voicevox_speaker/external/concurrentqueue
+	url = git@github.com:cameron314/concurrentqueue.git

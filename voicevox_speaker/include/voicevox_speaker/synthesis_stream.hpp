@@ -1,3 +1,5 @@
+#include "concurrentqueue.h"
+
 #include "voicevox_speaker/voicevox_utils.hpp"
 #include "voicevox_speaker/voicevox.hpp"
 
@@ -32,18 +34,20 @@ private:
     bool onGetData(Chunk& data) override;
     inline void onSeek(sf::Time) override {}; // unsupported
     void synthesize(uint i);
+    uint synthesize_ahead(double buffer_time = 3.0);
 
     AudioQuery query_;
     uint32_t style_id_;
     std::shared_ptr<Voicevox> vv_;
 
-    std::queue<sf::SoundBuffer> wav_queue_;
+    //std::queue<sf::SoundBuffer> wav_queue_;
+    moodycamel::ConcurrentQueue<sf::SoundBuffer> wav_queue_;
 
     std::atomic_bool running_ { true };
     std::atomic_bool synthesis_done_ { false };
-    std::mutex queue_mutex_;
+    // std::mutex queue_mutex_;
     std::jthread synthesis_thread_;
-    std::condition_variable synth_cv_;
+    // std::condition_variable synth_cv_;
 };
 
 }

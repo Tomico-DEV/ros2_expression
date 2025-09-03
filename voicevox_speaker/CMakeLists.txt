@@ -175,6 +175,7 @@ add_dependencies(speak_action_server voicevox_core)
 target_include_directories(speak_action_server PRIVATE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/external/concurrentqueue>
 )
 target_compile_definitions(speak_action_server
   PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL"
