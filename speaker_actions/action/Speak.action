@@ -1,14 +1,10 @@
 # text to speak
 string text
-# if the request should cancel any currently playing audio
-bool canceling
 ---
 # false if errors
 bool success
 ---
 # viseme being spoken
 string viseme
-# how long the viseme lasts
-builtin_interfaces/Duration duration
 # 1 is max, 0 is silent
 float64 volume
