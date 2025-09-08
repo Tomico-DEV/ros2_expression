@@ -91,7 +91,7 @@ public:
       w.size_ = 0;
       w.data_ = nullptr;
   }
-  inline WavAudio& operator=(WavAudio&& w) noexcept {
+  inline WavAudio & operator=(WavAudio && w) noexcept {
     if (this != &w)
     {
       // free old resource
@@ -240,7 +240,7 @@ public:
   /**
    * \brief get underlying json object via const ref
    */
-  const nlohmann::json& get() const;
+  const nlohmann::json & get() const;
   /**
    * \brief get duration of ith chunk in seconds
    * \param i ith chunk
@@ -268,12 +268,12 @@ private:
 
   static void cons_to_phone_(
     std::string cons,
-    std::vector<Timed<Phone>>& phones,
+    std::vector<Timed<Phone>> & phones,
     double start_t,
     double end_t);
   static void vow_to_phone_(
     std::string vow,
-    std::vector<Timed<Phone>>& phones,
+    std::vector<Timed<Phone>> & phones,
     double start_t,
     double end_t);
 

@@ -3,7 +3,7 @@
 <package format="3">
   <name>qtexpression_controller</name>
   <version>0.0.0</version>
-  <description>GUI controller for testing ros2_expression</description>
+  <description>GUI controller for testing ros2_expression voicevox_speaker.</description>
   <maintainer email="humansbadrobotsgood@gmail.com">tomicodev</maintainer>
   <license>Apache-2.0</license>
 

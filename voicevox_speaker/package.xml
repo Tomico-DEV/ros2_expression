@@ -3,7 +3,7 @@
 <package format="3">
   <name>voicevox_speaker</name>
   <version>0.0.1</version>
-  <description>ROS 2 package for generating speech with VOICEVOX and providing lip-sync data for interactive agents.</description>
+  <description>ROS 2 package for generating Japanese speech with VOICEVOX and providing lip-sync data for interactive agents.</description>
   <maintainer email="humansbadrobotsgood@gmail.com">tomicodev</maintainer>
   <license>Apache-2.0</license>
 
