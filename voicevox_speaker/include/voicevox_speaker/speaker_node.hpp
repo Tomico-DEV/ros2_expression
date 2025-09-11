@@ -54,8 +54,11 @@
 
 // ROS2
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
+
+#include "lifecycle_msgs/msg/state.hpp"
 
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
@@ -76,12 +79,20 @@ namespace voicevox
 using SpeakAction = speaker_actions::action::Speak;
 using GoalHandleSpeak = rclcpp_action::ServerGoalHandle<SpeakAction>;
 
-class VVSpeakerNode : public rclcpp::Node
+class VVSpeakerNode : public rclcpp_lifecycle::LifecycleNode
 {
 public:
   VOICEVOX_SPEAKER_CPP_PUBLIC
   explicit VVSpeakerNode(
     const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
+
+protected:
+  // lifecycle functions
+  CallbackReturn on_configure(const rclcpp_lifecycle::State &) override;
+  CallbackReturn on_activate(const rclcpp_lifecycle::State &) override;
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State &) override;
+  CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) override;
+  CallbackReturn on_shutdown(const rclcpp_lifecycle::State &) override;
 
 private:
   // Node functions
@@ -107,6 +118,7 @@ private:
   void playback_(
     const std::shared_ptr<GoalHandleSpeak> goal_handle,
     double update_rate);
+  
   void stop_playback_();
 
   // Voicevox runtime
@@ -126,12 +138,12 @@ private:
 
   // Node variables
 
-  rclcpp_action::Server<SpeakAction>::SharedPtr action_server_;
+  rclcpp_action::Server<SpeakAction>::SharedPtr p_action_server_;
 
   double update_rate_ = 100;  // rate to send feedback
+  float volume_ = 100.0f;     // volume to playback audio at (100 is max)
   std::jthread playback_thread_;
   std::atomic_bool running_{false};
 };
 
 }  // namespace voicevox
-

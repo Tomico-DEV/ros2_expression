@@ -71,14 +71,76 @@ auto shapeset2strvec(const ShapeSet & s) -> std::vector<std::string>
 }
 
 VVSpeakerNode::VVSpeakerNode(const rclcpp::NodeOptions & options)
-: Node{"voicevox_speaker", options}
+: rclcpp_lifecycle::LifecycleNode{"voicevox_speaker", options}
+{}
+
+/**
+ * \brief declare parameters and init voicevox runtime
+ */
+auto VVSpeakerNode::on_configure(const rclcpp_lifecycle::State &)
+-> CallbackReturn
 {
+  RCLCPP_INFO(get_logger(), "Configurating...");
+
   declare_params_();
   init_action_server_();
 
   p_voicevox_ = std::make_shared<Voicevox>(
     dict_path_, ort_path_, model_paths_,
     voicevox_make_default_initialize_options());
+
+  return CallbackReturn::SUCCESS;
+}
+
+/**
+ * \brief start accepting goals
+ */
+auto VVSpeakerNode::on_activate(const rclcpp_lifecycle::State &)
+-> CallbackReturn
+{
+  RCLCPP_INFO(get_logger(), "Activating...");
+
+  return CallbackReturn::SUCCESS;
+}
+
+/**
+ * \brief stop accepting goals and stop playback
+ */
+auto VVSpeakerNode::on_deactivate(const rclcpp_lifecycle::State &)
+-> CallbackReturn
+{
+  RCLCPP_INFO(get_logger(), "Deactivating...");
+
+  stop_playback_();
+
+  return CallbackReturn::SUCCESS;
+}
+
+/**
+ * \brief deinit resources
+ */
+auto VVSpeakerNode::on_cleanup(const rclcpp_lifecycle::State &)
+-> CallbackReturn
+{
+  RCLCPP_INFO(get_logger(), "Cleaning up...");
+
+  p_action_server_.reset();
+  p_voicevox_.reset();
+  p_query_.reset();
+
+  return CallbackReturn::SUCCESS;
+}
+
+/**
+ * \brief stop playback and shutdown
+ */
+auto VVSpeakerNode::on_shutdown(const rclcpp_lifecycle::State & state)
+-> CallbackReturn
+{
+  RCLCPP_INFO(get_logger(), "Shutting down from state %s", state.label().c_str());
+
+  stop_playback_();
+  return CallbackReturn::SUCCESS;
 }
 
 /**
@@ -178,11 +240,14 @@ void VVSpeakerNode::declare_params_()
   update_rate_ = declare_parameter<double>(
     "feedback_update_rate", update_rate_,  // default rate is 100
     make_desc("How often to send back speak action viseme feedback"));
+  volume_ = declare_parameter<float>(
+    "playback_volume", volume_,
+    make_desc("Volume of audio playback"));
 }
 
 void VVSpeakerNode::init_action_server_()
 {
-  action_server_ = rclcpp_action::create_server<SpeakAction>(
+  p_action_server_ = rclcpp_action::create_server<SpeakAction>(
     this, "speak",
     std::bind(
       &VVSpeakerNode::handle_speak_goal_, this, std::placeholders::_1,
@@ -204,6 +269,13 @@ auto VVSpeakerNode::handle_speak_goal_(
 -> rclcpp_action::GoalResponse
 {
   RCLCPP_INFO(get_logger(), "Got goal: %s", goal->text.c_str());
+
+  if (
+    get_current_state().id() !=
+    lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
+  {
+    return rclcpp_action::GoalResponse::REJECT;
+  }
 
   try {
     auto new_query = std::make_shared<AudioQuery>(
@@ -260,6 +332,7 @@ void VVSpeakerNode::playback_(
   running_.store(true);
   // create synthesis stream
   SynthesisStream synth_stream_{*p_query_, speaker_id_, p_voicevox_};
+  synth_stream_.setVolume(volume_);
 
   // parse audioquery to phonemes
   BoundedTimeline<Phone> phone_timeline = p_query_->to_timeline();
@@ -276,8 +349,6 @@ void VVSpeakerNode::playback_(
 
   // default viseme at start
   Shape viseme{Shape::X};
-
-  double volume = p_query_->get_volume();
 
   // start audio playback and viseme playback at the same time
   synth_stream_.play();
@@ -303,7 +374,6 @@ void VVSpeakerNode::playback_(
 
     SpeakAction::Feedback feedback;
     feedback.viseme = std::format("{}", viseme);  // parse to str
-    feedback.volume = volume;
     goal_handle->publish_feedback(
         std::make_shared<SpeakAction::Feedback>(feedback));
 

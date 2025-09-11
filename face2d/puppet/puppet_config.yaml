@@ -19,3 +19,4 @@ param_mapping:
   neck:
     pitch_yaw: "Head Pitch Yaw"
     roll: "Head Roll"
+  diaphragm: "Diaphragm"

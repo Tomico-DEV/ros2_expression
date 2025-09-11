@@ -33,9 +33,6 @@
 
 #include "voicevox_speaker/synthesis_stream.hpp"
 
-// temp; debug
-#include <iostream>
-
 namespace voicevox
 {
 
@@ -105,9 +102,7 @@ SynthesisStream::SynthesisStream(
           const uint query_len = query_.get_query_length();
           for (uint i = initial_i + 1; i < query_len && running_.load(); ++i) {
             synthesize_(i);
-          }
-          // finished synthesis
-          std::cout << "Synthesis Complete\n";
+          };
           synthesis_done_.store(true);
         } catch (...) {
           running_.store(false);

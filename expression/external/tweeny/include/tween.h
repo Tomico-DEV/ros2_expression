@@ -33,7 +33,6 @@
 #include <tuple>
 #include <vector>
 #include <functional>
-#include <string>
 
 #include "tweentraits.h"
 #include "tweenpoint.h"

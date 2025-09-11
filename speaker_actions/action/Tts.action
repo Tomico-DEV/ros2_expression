@@ -1,0 +1,10 @@
+# used for expression
+
+# text to tts. supports emotes
+string text
+---
+# false if tts was not successful
+bool success
+---
+# progress (1 is complete)
+float64 progress

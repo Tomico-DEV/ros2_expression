@@ -1,3 +1,5 @@
+# used for face2d
+
 # text to speak
 string text
 ---
@@ -6,5 +8,3 @@ bool success
 ---
 # viseme being spoken
 string viseme
-# 1 is max, 0 is silent
-float64 volume

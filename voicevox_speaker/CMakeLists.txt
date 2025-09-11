@@ -156,6 +156,8 @@ target_link_libraries(rhubarb-animation
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(speaker_actions REQUIRED)
@@ -183,7 +185,9 @@ target_compile_definitions(speak_action_server
 ament_target_dependencies(speak_action_server
   rclcpp
   rclcpp_action
+  rclcpp_lifecycle
   rclcpp_components
+  lifecycle_msgs
   ament_index_cpp
   speaker_actions
   nlohmann_json

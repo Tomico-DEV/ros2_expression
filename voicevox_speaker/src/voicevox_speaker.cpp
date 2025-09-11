@@ -25,7 +25,7 @@
  *                      /
  *                    -
  * \author TomicoDEV
- * \file main.cpp
+ * \file voicevox_speaker.cpp
  * \details Entry point for Voicevox Speaker's Speaker Node
  */
 
@@ -37,8 +37,14 @@ int main(int argc, char *argv[])
 {
   rclcpp::init(argc, argv);
 
-  rclcpp::spin(std::make_shared<voicevox::VVSpeakerNode>());
+  auto vv_node = std::make_shared<voicevox::VVSpeakerNode>();
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+
+  executor.add_node(vv_node->get_node_base_interface());
+  executor.spin();
 
   rclcpp::shutdown();
+
   return 0;
 }

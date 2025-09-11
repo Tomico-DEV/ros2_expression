@@ -3,7 +3,10 @@
 <package format="3">
   <name>voicevox_speaker</name>
   <version>0.0.1</version>
-  <description>ROS 2 package for generating Japanese speech with VOICEVOX and providing lip-sync data for interactive agents.</description>
+  <description>
+    ROS 2 package for generating Japanese speech with VOICEVOX and providing 
+    lip-sync data for interactive agents.
+  </description>
   <maintainer email="humansbadrobotsgood@gmail.com">tomicodev</maintainer>
   <license>Apache-2.0</license>
 
@@ -22,8 +25,12 @@
   <!--audioquery support-->
   <build_depend>nlohmann-json-dev</build_depend>
 
-  <depend>ament_index_cpp</depend>
   <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
+  <depend>lifecycle_msgs</depend>
+  <depend>rclcpp_action</depend>
+
+  <depend>ament_index_cpp</depend>
   <depend>speaker_actions</depend>
 
   <test_depend>ament_lint_auto</test_depend>

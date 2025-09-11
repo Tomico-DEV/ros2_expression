@@ -29,7 +29,6 @@
 #ifndef TWEENY_TWEENTRAITS_H
 #define TWEENY_TWEENTRAITS_H
 
-#include <cstdint>
 #include <tuple>
 #include <functional>
 #include <type_traits>

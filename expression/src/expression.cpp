@@ -25,44 +25,22 @@
  *                      /
  *                    -
  * \author TomicoDEV
- * \file camera.hpp
- * \brief C++ wrapper for Inochi2D's camera
- *
+ * \file expression.cpp
+ * \details Entry point for expression node
  */
 
-#pragma once
+#include <memory>
 
-#define INOCHI2D_GLYES
-#include <inochi2d.h>
+#include "rclcpp/rclcpp.hpp"
 
-#include <SFML/System.hpp>
+#include "expression/expression_node.hpp"
 
-namespace face2d
+int main(int argc, char *argv[])
 {
+  rclcpp::init(argc, argv);
 
-/**
- * \warning ALWAYS DEFINE IN AN INOCHI2D CONTEXT, OTHERWISE YOU WILL GET
- *          A SEGFAULT. Ask me how I found out...
- */
-class Camera
-{
-public:
-  /**
-   * \param position starting position of camera
-   * \param zoom starting zoom of camera
-   */
-  explicit Camera(sf::Vector2f position = sf::Vector2{0.0f, 0.0f}, float zoom = 0.8f);
+  rclcpp::spin(std::make_shared<expression::ExpressionNode>());
 
-  void set_zoom(float zoom);
-  float get_zoom();
-
-  void set_pos(sf::Vector2f position);
-  sf::Vector2f get_pos();
-
-private:
-  InCamera * p_cam_ = nullptr;
-  sf::Vector2f pos_;
-  float zoom_;
-};
-
-}  // namespace face2d
+  rclcpp::shutdown();
+  return 0;
+}
