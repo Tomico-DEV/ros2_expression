@@ -13,20 +13,104 @@ namespace expression
 {
 
 ExpressionNode::ExpressionNode(const rclcpp::NodeOptions &options)
-: Node{"expression", options}, p_chan_map_{std::make_shared<ChanMap>()}
+: rclcpp_lifecycle::LifecycleNode{"expression", options},
+  p_chan_map_{std::make_shared<ChanMap>()}
 {
   declare_params_();
-  create_channels_();
-  create_animators_();
-  start_channels_();
-  start_animation_();
 }
 
-ExpressionNode::~ExpressionNode()
+/**
+ * \brief create publishers, channels, and animators
+ */
+auto ExpressionNode::on_configure(const rclcpp_lifecycle::State &)
+-> CallbackReturn
+{
+  RCLCPP_INFO(get_logger(), "Configurating...");
+
+  try {
+    create_channels_();
+    create_animators_();
+
+    return CallbackReturn::SUCCESS;
+  } catch (const std::exception& e) {
+    RCLCPP_ERROR(get_logger(), "Failed to configure: %s", e.what());
+  }
+
+  return CallbackReturn::FAILURE;
+}
+
+auto ExpressionNode::on_activate(const rclcpp_lifecycle::State &)
+-> CallbackReturn
+{
+  RCLCPP_INFO(get_logger(), "Activating..");
+
+  try {
+    start_channels_();
+    start_animation_();
+
+    return CallbackReturn::SUCCESS;
+  } catch (const std::exception& e) {
+    RCLCPP_ERROR(get_logger(), "Failed to activate: %s", e.what());
+  }
+
+  return CallbackReturn::FAILURE;
+}
+
+/**
+ * \brief stop animators and channels
+ */
+auto ExpressionNode::on_deactivate(const rclcpp_lifecycle::State &)
+-> CallbackReturn
 {
   stop_animation_();
   stop_channels_();
-  std::this_thread::sleep_for(std::chrono::milliseconds{1000});
+
+  return CallbackReturn::SUCCESS;
+}
+
+/**
+ * \brief stop animators, channels, and cleanup resources
+ */
+auto ExpressionNode::on_cleanup(const rclcpp_lifecycle::State &)
+-> CallbackReturn
+{
+  RCLCPP_INFO(get_logger(), "Cleaning up...");
+
+  try {
+    stop_animation_();
+    stop_channels_();
+
+    p_left_eye_chans_.reset();
+    p_right_eye_chans_.reset();
+    p_mouth_chans_.reset();
+    p_neck_chans_.reset();
+
+    p_chan_map_.reset();
+    animators_.clear();
+
+    // no implementation
+    p_speak_client_.reset();
+    p_tts_server_.reset();
+
+    animator_loader_.reset();
+
+    return CallbackReturn::SUCCESS;
+  } catch (const std::exception& e) {
+    RCLCPP_ERROR(get_logger(), "Failed to clean up: %s", e.what());
+  }
+
+  return CallbackReturn::FAILURE;
+}
+
+auto ExpressionNode::on_shutdown(const rclcpp_lifecycle::State & state)
+-> CallbackReturn
+{
+  RCLCPP_INFO(get_logger(), "Shutting down from state %s", state.label().c_str());
+
+  stop_animation_();
+  stop_channels_();
+
+  return CallbackReturn::SUCCESS;
 }
 
 void ExpressionNode::declare_params_()
@@ -66,7 +150,7 @@ void ExpressionNode::create_channels_()
   p_neck_chans_ =
     std::make_shared<NeckChannels>(
       this, 10, p_chan_map_, animate_rate_);
-  
+
   RCLCPP_INFO(get_logger(), "Made Channels");
 }
 
@@ -105,6 +189,7 @@ void ExpressionNode::stop_channels_()
   p_right_eye_chans_->stop();
   p_mouth_chans_->stop();
   p_neck_chans_->stop();
+
   RCLCPP_INFO(get_logger(), "Stopped channels");
 }
 

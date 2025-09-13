@@ -6,7 +6,7 @@ namespace expression
 {
 
 EyeChannels::EyeChannels(
-  rclcpp::Node * parent,
+  rclcpp_lifecycle::LifecycleNode * parent,
   const std::string & root,
   const rclcpp::QoS & qos,
   std::shared_ptr<ChanMap> p_chan_map,

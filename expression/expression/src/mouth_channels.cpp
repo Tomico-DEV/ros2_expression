@@ -7,7 +7,7 @@ namespace expression
 using Param1D = face_msgs::msg::Param1D;
 
 MouthChannels::MouthChannels(
-  rclcpp::Node * parent,
+  rclcpp_lifecycle::LifecycleNode * parent,
   const rclcpp::QoS & qos,
   std::shared_ptr<ChanMap> p_chan_map,
   std::chrono::milliseconds rate)

@@ -39,7 +39,12 @@ int main(int argc, char *argv[])
 {
   rclcpp::init(argc, argv);
 
-  rclcpp::spin(std::make_shared<expression::ExpressionNode>());
+  auto expression_node = std::make_shared<expression::ExpressionNode>();
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+
+  executor.add_node(expression_node->get_node_base_interface());
+  executor.spin();
 
   rclcpp::shutdown();
   return 0;

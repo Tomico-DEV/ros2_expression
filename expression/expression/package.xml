@@ -11,8 +11,10 @@
 
   <depend>ament_index_cpp</depend>
   <depend>rclcpp</depend>
+  <depend>rclcpp_lifecycle</depend>
   <depend>rclcpp_action</depend>
   <depend>speaker_actions</depend>
+  <depend>lifecycle_msgs</depend>
   <depend>face_msgs</depend>
   <depend>libtweeny-dev</depend>
   <depend>pluginlib</depend>

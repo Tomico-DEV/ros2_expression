@@ -58,11 +58,11 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
 
-#include "lifecycle_msgs/msg/state.hpp"
-
 #include "ament_index_cpp/get_package_share_directory.hpp"
 
 #include "speaker_actions/action/speak.hpp"
+
+#include "lifecycle_msgs/msg/state.hpp"
 
 // Voicevox
 #include "voicevox_speaker/synthesis_stream.hpp"

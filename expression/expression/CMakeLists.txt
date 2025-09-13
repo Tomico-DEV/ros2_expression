@@ -13,9 +13,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(speaker_actions REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
 find_package(face_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
 
@@ -65,7 +67,9 @@ ament_target_dependencies(expression_server
   ament_index_cpp
   rclcpp
   rclcpp_action
+  rclcpp_lifecycle
   rclcpp_components
+  lifecycle_msgs
   speaker_actions
   face_msgs
   pluginlib

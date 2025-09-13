@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 
 #include "face_msgs/msg/param1_d.hpp"
 #include "face_msgs/msg/param2_d.hpp"
@@ -34,15 +35,15 @@ public:
   using SharedPtr = std::shared_ptr<GroupedChannels>;
 
   explicit inline GroupedChannels(
-    rclcpp::Node * parent,
+    rclcpp_lifecycle::LifecycleNode * parent,
     const std::string & root,
     const rclcpp::QoS & qos,
     std::shared_ptr<ChanMap> p_chan_map,
     std::chrono::milliseconds rate)
-  : parent_{parent}, p_chan_map_{p_chan_map},
+  : parent_lc_{parent}, p_chan_map_{p_chan_map},
     root_{root}, qos_{qos}, rate_{rate}
   { }
-  
+
   void start();
   void stop();
 
@@ -62,13 +63,13 @@ private:
   inline auto make_pub_(const std::string & topic_name)
   -> rclcpp::Publisher<T>::SharedPtr
   {
-    return parent_->create_publisher<T>(topic_name, qos_);
+    return parent_lc_->create_publisher<T>(topic_name, qos_);
   }
 
   void run_();
 
 
-  rclcpp::Node * parent_;
+  rclcpp_lifecycle::LifecycleNode * parent_lc_;
   std::shared_ptr<ChanMap> p_chan_map_;
   std::string root_;
   rclcpp::QoS qos_;

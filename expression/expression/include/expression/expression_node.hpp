@@ -10,18 +10,20 @@
 #include <vector>
 
 // ROS2
-#include "speaker_actions/action/speak.hpp"
-#include "speaker_actions/action/tts.hpp"
-
-#include "face_msgs/msg/param1_d.hpp"
-#include "face_msgs/msg/param2_d.hpp"
-
-#include "ament_index_cpp/get_package_share_directory.hpp"
-
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
 
+#include "ament_index_cpp/get_package_share_directory.hpp"
+
+#include "speaker_actions/action/speak.hpp"
+#include "speaker_actions/action/tts.hpp"
+
+#include "lifecycle_msgs/msg/state.hpp"
+
+#include "face_msgs/msg/param1_d.hpp"
+#include "face_msgs/msg/param2_d.hpp"
 
 // Tweeny
 #include "tweeny/tweeny.h"
@@ -45,15 +47,20 @@ using GoalHandleSpeak = rclcpp_action::ClientGoalHandle<SpeakAction>;
 using TtsAction = speaker_actions::action::Tts;
 using GoalHandleTts = rclcpp_action::ClientGoalHandle<TtsAction>;
 
-class ExpressionNode : public rclcpp::Node
+class ExpressionNode : public rclcpp_lifecycle::LifecycleNode
 {
 public:
   EXPRESSION_SERVER_CPP_PUBLIC
   explicit ExpressionNode(
     const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
-  ~ExpressionNode();
 
- 
+protected:
+  // lifecycle functions
+  CallbackReturn on_configure(const rclcpp_lifecycle::State &) override;
+  CallbackReturn on_activate(const rclcpp_lifecycle::State &) override;
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State &) override;
+  CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) override;
+  CallbackReturn on_shutdown(const rclcpp_lifecycle::State &) override;
 
 private:
   void declare_params_();
@@ -93,7 +100,6 @@ private:
 
   std::atomic_bool running_{false};
   std::jthread animator_thread_;
-
 
   std::chrono::milliseconds animate_rate_{10};
 };

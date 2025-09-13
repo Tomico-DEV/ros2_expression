@@ -112,7 +112,7 @@ void Channel<PubT, TweenT>::stop()
   playing_.store(false);
   std::lock_guard lock{this->tween_mut_};
   if (t_) {
-      t_.reset();  // deterministic destruction
+    t_.reset();  // deterministic destruction
   }
 }
 

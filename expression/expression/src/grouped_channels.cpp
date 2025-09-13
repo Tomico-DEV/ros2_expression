@@ -43,12 +43,12 @@ void GroupedChannels::stop()
     thread_.join();
   }
 
-  // stop individual channels
-  for (auto & p_channel : chans_) {
+  for (auto & ch_variant : chans_) {
     std::visit(overloaded{
-      [&](const Channel1D::SharedPtr & ch) { ch->stop(); },
-      [&](const Channel2D::SharedPtr & ch) { ch->stop(); }
-    }, p_channel);
+      [&](auto & ch) {
+        ch->stop();
+      }
+    }, ch_variant);
   }
 }
 
@@ -87,7 +87,6 @@ template <typename T>
 void GroupedChannels::make_chan_(const std::string & topic)
 {
   using P = typename ParamType<T>::type;
-  //using C = typename CoreType<T>::type;
 
   std::string name = std::format("{}/{}", root_, topic);
 

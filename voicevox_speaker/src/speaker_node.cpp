@@ -77,24 +77,30 @@ VVSpeakerNode::VVSpeakerNode(const rclcpp::NodeOptions & options)
 }
 
 /**
- * \brief init voicevox runtime
+ * \brief init voicevox runtime and action server
  */
 auto VVSpeakerNode::on_configure(const rclcpp_lifecycle::State &)
 -> CallbackReturn
 {
   RCLCPP_INFO(get_logger(), "Configurating...");
 
-  init_action_server_();
+  try {
+    init_action_server_();
 
-  p_voicevox_ = std::make_shared<Voicevox>(
-    dict_path_, ort_path_, model_paths_,
-    voicevox_make_default_initialize_options());
+    p_voicevox_ = std::make_shared<Voicevox>(
+      dict_path_, ort_path_, model_paths_,
+      voicevox_make_default_initialize_options());
 
-  return CallbackReturn::SUCCESS;
+    return CallbackReturn::SUCCESS;
+  } catch (const std::exception& e) {
+    RCLCPP_ERROR(get_logger(), "Failed to configure: %s", e.what());
+  }
+
+  return CallbackReturn::FAILURE;
 }
 
 /**
- * \brief start accepting goals
+ * \brief do nothing
  */
 auto VVSpeakerNode::on_activate(const rclcpp_lifecycle::State &)
 -> CallbackReturn
