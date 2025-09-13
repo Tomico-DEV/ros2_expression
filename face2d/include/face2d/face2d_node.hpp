@@ -49,7 +49,10 @@
 
 // ROS2
 #include "rclcpp/rclcpp.hpp"
+#include "rclcpp_lifecycle/lifecycle_node.hpp"
 #include "ament_index_cpp/get_package_share_directory.hpp"
+
+#include "lifecycle_msgs/msg/state.hpp"
 
 #include "face_msgs/msg/param1_d.hpp"
 #include "face_msgs/msg/param2_d.hpp"
@@ -63,11 +66,20 @@ namespace face2d
 /**
  * \brief Face2D Node.
  */
-class Face2DNode : public rclcpp::Node
+class Face2DNode : public rclcpp_lifecycle::LifecycleNode
 {
 public:
-  Face2DNode();
-  ~Face2DNode();
+  Face2DNode(
+    const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
+  virtual ~Face2DNode() = default;
+
+protected:
+  // lifecycle functions
+  CallbackReturn on_configure(const rclcpp_lifecycle::State &) override;
+  CallbackReturn on_activate(const rclcpp_lifecycle::State &) override;
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State &) override;
+  CallbackReturn on_cleanup(const rclcpp_lifecycle::State &) override;
+  CallbackReturn on_shutdown(const rclcpp_lifecycle::State &) override;
 
 private:
   void declare_params_();

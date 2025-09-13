@@ -72,17 +72,18 @@ auto shapeset2strvec(const ShapeSet & s) -> std::vector<std::string>
 
 VVSpeakerNode::VVSpeakerNode(const rclcpp::NodeOptions & options)
 : rclcpp_lifecycle::LifecycleNode{"voicevox_speaker", options}
-{}
+{
+  declare_params_();
+}
 
 /**
- * \brief declare parameters and init voicevox runtime
+ * \brief init voicevox runtime
  */
 auto VVSpeakerNode::on_configure(const rclcpp_lifecycle::State &)
 -> CallbackReturn
 {
   RCLCPP_INFO(get_logger(), "Configurating...");
 
-  declare_params_();
   init_action_server_();
 
   p_voicevox_ = std::make_shared<Voicevox>(

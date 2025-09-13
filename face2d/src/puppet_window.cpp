@@ -42,15 +42,26 @@ PuppetWindow::PuppetWindow(std::string name, sf::Vector2u size, uint32_t style)
   window_name_{name}, size_{size}, style_{style}
 {}
 
+PuppetWindow::~PuppetWindow()
+{
+  stop();
+}
+
 void PuppetWindow::start()
 {
-  running_.store(true);
+  bool expected = false;
+  if (!running_.compare_exchange_strong(expected, true)) {
+    return;  // thread is already running
+  }
   window_thread_ = std::thread(&PuppetWindow::update_window_, this);
 }
 
 void PuppetWindow::stop()
 {
-  running_.store(false);
+  bool expected = true;
+  if (!running_.compare_exchange_strong(expected, false)) {
+    return;  // thread is already stopped
+  }
   if (window_thread_.joinable()) {
     window_thread_.join();
   }
@@ -150,6 +161,8 @@ void PuppetWindow::update_window_()
   inPuppetDestroy(p_puppet_);
   // unload inochi2d runtime
   inCleanup();
+
+  window_.close();
 }
 
 /**

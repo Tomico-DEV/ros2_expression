@@ -72,6 +72,8 @@ set(OpenGL_GL_PREFERENCE GLVND)
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(rclcpp_lifecycle REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(face_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
@@ -92,7 +94,9 @@ add_dependencies(face2d build-inochi2d-c)
 
 ament_target_dependencies(face2d
   rclcpp
+  rclcpp_lifecycle
   ament_index_cpp
+  lifecycle_msgs
   face_msgs
   yaml-cpp
   # EXCLUDE_TARGET_LIBRARIES

@@ -26,7 +26,7 @@
  *                    -
  * \author TomicoDEV
  * \file face2d.cpp
- * \brief entry point for face2d node
+ * \brief Entry point for face2d node
  */
 
 #include "face2d/face2d_node.hpp"
@@ -38,7 +38,12 @@ int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
 
-  rclcpp::spin(std::make_shared<face2d::Face2DNode>());
+  auto face_node = std::make_shared<face2d::Face2DNode>();
+
+  rclcpp::executors::SingleThreadedExecutor executor;
+
+  executor.add_node(face_node->get_node_base_interface());
+  executor.spin();
 
   rclcpp::shutdown();
   return 0;

@@ -42,26 +42,97 @@
 namespace face2d
 {
 
-Face2DNode::Face2DNode()
-: Node{"face2d"}
+Face2DNode::Face2DNode(const rclcpp::NodeOptions & options)
+: rclcpp_lifecycle::LifecycleNode{"face2d", options}
 {
+  RCLCPP_INFO(get_logger(), "Node created");
   declare_params_();
-
-  p_window_ = std::make_unique<PuppetWindow>(
-    get_parameter("window.title").as_string(),
-    get_window_size_(),
-    get_window_style_());
-  p_window_->set_puppet(get_parameter("puppet_file").as_string());
-  p_window_->start();
-
-  make_subscribers_();
-
-  RCLCPP_INFO(get_logger(), "Got params!");
 }
 
-Face2DNode::~Face2DNode()
+/**
+ * \brief create window
+ */
+auto Face2DNode::on_configure(const rclcpp_lifecycle::State &)
+-> CallbackReturn
 {
-  p_window_->stop();
+  RCLCPP_INFO(get_logger(), "Configuring..");
+  try {
+    p_window_ = std::make_unique<PuppetWindow>(
+      get_parameter("window.title").as_string(),
+      get_window_size_(),
+      get_window_style_());
+    p_window_->set_puppet(get_parameter("puppet_file").as_string());
+
+    RCLCPP_INFO(get_logger(), "Node configured");
+  } catch (const std::exception & e) {
+    RCLCPP_ERROR(get_logger(), "Failed to configure: %s", e.what());
+    return CallbackReturn::FAILURE;
+  }
+
+  return CallbackReturn::SUCCESS;
+}
+
+/**
+ * \brief start window and create subsribers
+ */
+auto Face2DNode::on_activate(const rclcpp_lifecycle::State &)
+-> CallbackReturn
+{
+  RCLCPP_INFO(get_logger(), "Activating..");
+  if (p_window_) {
+    p_window_->start();
+    make_subscribers_();
+
+    RCLCPP_INFO(get_logger(), "Window started");
+  }
+
+  return CallbackReturn::SUCCESS;
+}
+
+/**
+ * \brief stop window
+ */
+auto Face2DNode::on_deactivate(const rclcpp_lifecycle::State &)
+-> CallbackReturn
+{
+  RCLCPP_INFO(get_logger(), "Deactivating..");
+  if (p_window_) {
+    p_window_->stop();
+    RCLCPP_INFO(get_logger(), "Window stopped");
+  }
+
+  return CallbackReturn::SUCCESS;
+}
+
+/**
+ * \brief release window
+ */
+auto Face2DNode::on_cleanup(const rclcpp_lifecycle::State &)
+-> CallbackReturn
+{
+  RCLCPP_INFO(get_logger(), "Cleaning up..");
+  p_window_.reset();
+  subscriber_1d_.clear();
+  subscriber_2d_.clear();
+  RCLCPP_INFO(get_logger(), "Cleaned up resources");
+
+  return CallbackReturn::SUCCESS;
+}
+
+/**
+ * \brief release window
+ */
+auto Face2DNode::on_shutdown(const rclcpp_lifecycle::State & state)
+-> CallbackReturn
+{
+  if (p_window_) {
+    p_window_->stop();
+  }
+  p_window_.reset();
+
+  RCLCPP_INFO(get_logger(), "Shutting down from state %s", state.label().c_str());
+
+  return CallbackReturn::SUCCESS;
 }
 
 /**

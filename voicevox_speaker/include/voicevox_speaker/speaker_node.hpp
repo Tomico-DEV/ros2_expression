@@ -118,7 +118,7 @@ private:
   void playback_(
     const std::shared_ptr<GoalHandleSpeak> goal_handle,
     double update_rate);
-  
+
   void stop_playback_();
 
   // Voicevox runtime

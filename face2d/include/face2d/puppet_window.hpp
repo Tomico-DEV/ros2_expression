@@ -82,7 +82,7 @@ public:
    * PuppetWindow::start() should be invoked
    */
   PuppetWindow(std::string name, sf::Vector2u size, uint32_t style = sf::Style::Default);
-
+  ~PuppetWindow();
   /**
    * \brief opens and starts the rendering thread
    */

@@ -29,9 +29,9 @@
  * \details Entry point for Voicevox Speaker's Speaker Node
  */
 
-#include "rclcpp/rclcpp.hpp"
-
 #include "voicevox_speaker/speaker_node.hpp"
+
+#include "rclcpp/rclcpp.hpp"
 
 int main(int argc, char *argv[])
 {
