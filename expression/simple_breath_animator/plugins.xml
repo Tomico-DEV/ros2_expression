@@ -1,0 +1,7 @@
+<library path="simple_breath_animator">
+  <class 
+    type="expression::BreathAnimator"
+    base_class_type="expression::Animator">
+    <description>Simple breath animator plugin</description>
+  </class>
+</library>

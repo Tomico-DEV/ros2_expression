@@ -1,0 +1,7 @@
+<library path="simple_blink_animator">
+  <class 
+    type="expression::BlinkAnimator"
+    base_class_type="expression::Animator">
+    <description>Simple blink animator plugin</description>
+  </class>
+</library>

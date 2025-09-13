@@ -4,6 +4,3 @@
 [submodule "voicevox_speaker/external/concurrentqueue"]
 	path = voicevox_speaker/external/concurrentqueue
 	url = git@github.com:cameron314/concurrentqueue.git
-[submodule "external/tweeny"]
-	path = expression/external/tweeny
-	url = git@github.com:mobius3/tweeny.git
