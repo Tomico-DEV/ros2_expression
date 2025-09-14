@@ -6,8 +6,6 @@
 #include <mutex>
 #include <optional>
 
-#include <iostream>
-
 #include "tweeny/tweeny.h"
 
 namespace expression

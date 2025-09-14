@@ -13,8 +13,6 @@
 #include <utility>
 #include <string>
 
-#include <iostream>
-
 #include "ament_index_cpp/get_package_share_directory.hpp"
 #include "behaviortree_cpp/bt_factory.h"
 

@@ -6,8 +6,6 @@
 #include <memory>
 #include <optional>
 
-#include <iostream>
-
 #include "tweeny/tweeny.h"
 
 #include "face_msgs/msg/param1_d.hpp"

@@ -1,7 +1,5 @@
 #include "expression/eye_channels.hpp"
 
-#include <iostream>
-
 namespace expression
 {
 

@@ -33,7 +33,6 @@
 
 #include "voicevox_speaker/voicevox.hpp"
 
-#include <iostream>
 
 namespace voicevox
 {

@@ -1,7 +1,5 @@
 #include "expression/grouped_channels.hpp"
 
-#include <iostream>
-
 namespace expression
 {
 

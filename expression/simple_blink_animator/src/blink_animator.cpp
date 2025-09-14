@@ -1,6 +1,5 @@
 #include "simple_blink_animator/blink_animator.hpp"
 
-#include <iostream>
 
 namespace expression
 {
@@ -120,7 +119,6 @@ auto Blink::add_blink_(
   const double closed_duration = blink_dur * blink_close_ratio_;
   const double open_duration = blink_dur - stride_duration - closed_duration;
 
-  std::cout << "Add stride " << stride_duration << " open " << open_duration << "\n";
   return tween
     .to(1).during(stride_duration).via(tweeny::easing::quinticIn)
     .to(1).during(closed_duration)

@@ -1,6 +1,5 @@
 #include "simple_breath_animator/breath_animator.hpp"
 
-#include <iostream>
 
 namespace expression
 {

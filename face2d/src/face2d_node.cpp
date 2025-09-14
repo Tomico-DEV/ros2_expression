@@ -34,7 +34,6 @@
 #define INOCHI2D_GLYES
 #include <inochi2d.h>
 
-#include <iostream>
 
 #include "face2d/face2d_node.hpp"
 
