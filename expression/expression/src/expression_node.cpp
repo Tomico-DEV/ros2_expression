@@ -19,6 +19,11 @@ ExpressionNode::ExpressionNode(const rclcpp::NodeOptions &options)
   declare_params_();
 }
 
+ExpressionNode::~ExpressionNode()
+{
+  cleanup_();
+}
+
 /**
  * \brief create publishers, channels, and animators
  */
@@ -77,29 +82,13 @@ auto ExpressionNode::on_cleanup(const rclcpp_lifecycle::State &)
   RCLCPP_INFO(get_logger(), "Cleaning up...");
 
   try {
-    stop_animation_();
-    stop_channels_();
-
-    p_left_eye_chans_.reset();
-    p_right_eye_chans_.reset();
-    p_mouth_chans_.reset();
-    p_neck_chans_.reset();
-
-    p_chan_map_.reset();
-    animators_.clear();
-
-    // no implementation
-    p_speak_client_.reset();
-    p_tts_server_.reset();
-
-    animator_loader_.reset();
-
-    return CallbackReturn::SUCCESS;
+    cleanup_();
   } catch (const std::exception& e) {
     RCLCPP_ERROR(get_logger(), "Failed to clean up: %s", e.what());
+    return CallbackReturn::FAILURE;
   }
 
-  return CallbackReturn::FAILURE;
+  return CallbackReturn::SUCCESS;
 }
 
 auto ExpressionNode::on_shutdown(const rclcpp_lifecycle::State & state)
@@ -118,7 +107,7 @@ void ExpressionNode::declare_params_()
   RCLCPP_INFO(get_logger(), "Declared params");
   using ParamDesc = rcl_interfaces::msg::ParameterDescriptor;
   // using IntRange = rcl_interfaces::msg::IntegerRange;
-  using fpath = std::filesystem::path;
+  // using fpath = std::filesystem::path;
 
   // convenience function for making parameter description
   auto make_desc =
@@ -230,6 +219,26 @@ void ExpressionNode::update_animation_()
 
     std::this_thread::sleep_for(animate_rate_);
   }
+}
+
+void ExpressionNode::cleanup_()
+{
+  stop_animation_();
+  stop_channels_();
+
+  p_left_eye_chans_.reset();
+  p_right_eye_chans_.reset();
+  p_mouth_chans_.reset();
+  p_neck_chans_.reset();
+
+  p_chan_map_.reset();
+  animators_.clear();
+
+  // no implementation
+  p_speak_client_.reset();
+  p_tts_server_.reset();
+
+  animator_loader_.reset();
 }
 
 }  // namespace expression

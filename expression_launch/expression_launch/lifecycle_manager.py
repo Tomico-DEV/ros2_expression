@@ -184,7 +184,7 @@ def main(args=None):
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
-        node.get_logger().info('Keyboard interrupt received, shutting down..')
+        print('Keyboard interrupt received, shutting down..')
     else:
         node.cleanup_nodes()
         rclpy.shutdown()

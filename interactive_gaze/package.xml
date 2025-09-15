@@ -1,15 +1,17 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>expression_launch</name>
+  <name>interactive_gaze</name>
   <version>0.0.1</version>
-  <description>Package for conveniently launching the Expression stack</description>
+  <description>Interactive gaze server and tf publisher for testing Expression. Utilizies RVIZ2's interactive gaze</description>
   <maintainer email="humansbadrobotsgood@gmail.com">tomicodev</maintainer>
   <license>Apache-2.0</license>
 
   <exec_depend>rclpy</exec_depend>
-  <exec_depend>rcl_interfaces</exec_depend>
-  <exec_depend>interactive_gaze</exec_depend>
+  <exec_depend>visualization_msgs</exec_depend>
+  <exec_depend>interactive_markers</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+  <exec_depend>tf2_ros_py</exec_depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

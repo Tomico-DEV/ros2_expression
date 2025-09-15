@@ -53,6 +53,7 @@ public:
   EXPRESSION_SERVER_CPP_PUBLIC
   explicit ExpressionNode(
     const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
+  ~ExpressionNode() override;
 
 protected:
   // lifecycle functions
@@ -74,6 +75,8 @@ private:
   void start_animation_();
   void stop_animation_();
   void update_animation_();
+
+  void cleanup_();
 
   inline bool has_speak_task_()
   {

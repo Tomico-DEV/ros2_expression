@@ -118,17 +118,22 @@ void PuppetWindow::update_window_()
         inViewportSet(size_.x, size_.y);
       }
       // wheel scroll
-      if (const auto * scroll = event->getIf<sf::Event::MouseWheelScrolled>()) {
-        cam.set_zoom(
-          std::clamp<float>(
-              cam.get_zoom() * std::pow(zoom_multiplier, scroll->delta),
-              zoom_min,
-              zoom_max));
+      if (window_.hasFocus()) {
+        if (const auto * scroll = event->getIf<sf::Event::MouseWheelScrolled>()) {
+          cam.set_zoom(
+            std::clamp<float>(
+                cam.get_zoom() * std::pow(zoom_multiplier, scroll->delta),
+                zoom_min,
+                zoom_max));
+        }
       }
     }
 
     // middle click pan
-    if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle)) {
+    if (
+      window_.hasFocus() &&
+      sf::Mouse::isButtonPressed(sf::Mouse::Button::Middle))
+    {
       cam.set_pos(cam.get_pos() + sf::Vector2f{delta} / cam.get_zoom());
     }
 
