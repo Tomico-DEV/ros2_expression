@@ -10,46 +10,7 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-#-------------------------inochi2d stuff----------------------------
-
-# find build tools
-find_program(DUB_EXECUTABLE dub REQUIRED)
-find_program(LDC_EXECUTABLE ldc2 REQUIRED)
-
-set(INOCHI2D_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/inochi2d_build)
-set(INOCHI2D_SO ${INOCHI2D_BUILD_DIR}/libinochi2d-c.so)
-set(INOCHI2D_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/inochi2d-c)
-
-# make the dir if it doesn't already exist
-file(MAKE_DIRECTORY ${INOCHI2D_BUILD_DIR})
-
-# now we build
-add_custom_command(
-  OUTPUT ${INOCHI2D_SO}
-  COMMAND ${DUB_EXECUTABLE} build
-    --compiler=${LDC_EXECUTABLE}
-    --config=yesgl
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${INOCHI2D_SOURCE_DIR}/out/libinochi2d-c.so
-    ${INOCHI2D_SO}
-  WORKING_DIRECTORY ${INOCHI2D_SOURCE_DIR}
-  COMMENT "Building inochi2d-c with ${DUB_EXECUTABLE} (${LDC_EXECUTABLE}) and copying into ${INOCHI2D_BUILD_DIR}"
-)
-
-add_custom_target(build-inochi2d-c ALL DEPENDS ${INOCHI2D_SO})
-
-# now that it's built we finally add the library
-add_library(inochi2d-c SHARED IMPORTED GLOBAL)
-set_target_properties(inochi2d-c PROPERTIES
-  IMPORTED_LOCATION ${INOCHI2D_SO}
-  INTERFACE_INCLUDE_DIRECTORIES ${INOCHI2D_SOURCE_DIR}
-)
-
-install(FILES ${INOCHI2D_SO}
-  DESTINATION lib
-)
-
-#--------------------------SFML stuff------------------------------
+#----------------------------SFML stuff----------------------------
 
 include(FetchContent)
 FetchContent_Declare(SFML
@@ -68,6 +29,154 @@ endif()
 # also tell CMake which to prefer
 set(OpenGL_GL_PREFERENCE GLVND)
 
+#-------------------------inochi2d stuff----------------------------
+
+# Detect platform and arch
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64")
+    set(LDC_ARCH "linux-x86_64")
+    set(LDC_EXT "tar.xz")
+  elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+    set(LDC_ARCH "linux-aarch64")
+    set(LDC_EXT "tar.xz")
+  else()
+    message(FATAL_ERROR "Unsupported Linux architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+  endif()
+
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  set(LDC_ARCH "osx-universal")
+  set(LDC_EXT "tar.xz")
+
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  # Windows archives are 7z format and multilib
+  set(LDC_ARCH "windows-multilib")
+  set(LDC_EXT "7z")
+
+else()
+  message(FATAL_ERROR "Unsupported OS: ${CMAKE_SYSTEM_NAME}")
+endif()
+
+# Fetch LDC (since apt is outdated as of writing, Sep 2025)
+set(LDC_VERSION "1.41.0")
+set(LDC_URL "https://github.com/ldc-developers/ldc/releases/download/v${LDC_VERSION}/ldc2-${LDC_VERSION}-${LDC_ARCH}.${LDC_EXT}")
+set(LDC_ARCHIVE "${CMAKE_BINARY_DIR}/ldc-${LDC_VERSION}.${LDC_EXT}")
+set(LDC_EXTRACTED "${CMAKE_BINARY_DIR}/ldc-${LDC_VERSION}")
+
+# Download + extract if not already present
+if(NOT EXISTS "${LDC_EXTRACTED}")
+  message(STATUS "Downloading LDC ${LDC_VERSION} for ${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}...")
+  file(DOWNLOAD "${LDC_URL}" "${LDC_ARCHIVE}" SHOW_PROGRESS)
+
+  message(STATUS "Extracting LDC ${LDC_VERSION}...")
+  if(LDC_EXT STREQUAL "tar.xz")
+    execute_process(
+      COMMAND ${CMAKE_COMMAND} -E tar xzf "${LDC_ARCHIVE}"
+      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+  elseif(LDC_EXT STREQUAL "7z")
+    # 7z not handled natively by cmake -E, require `7z` in PATH
+    execute_process(
+      COMMAND 7z x "${LDC_ARCHIVE}"
+      WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+  endif()
+
+  # Folder inside archive looks like ldc2-1.41.0-<arch>
+  file(GLOB LDC_DIRS "${CMAKE_BINARY_DIR}/ldc2-${LDC_VERSION}-${LDC_ARCH}")
+  file(RENAME "${LDC_DIRS}" "${LDC_EXTRACTED}")
+endif()
+
+# find build tools
+set(LDC_EXECUTABLE "${LDC_EXTRACTED}/bin/ldc2")
+set(DUB_EXECUTABLE "${LDC_EXTRACTED}/bin/dub")
+
+set(INOCHI2D_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/inochi2d_build)
+set(INOCHI2D_SO ${INOCHI2D_BUILD_DIR}/libinochi2d.so)
+set(INOCHI2D_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/inochi2d)
+
+# make the dir if it doesn't already exist
+file(MAKE_DIRECTORY ${INOCHI2D_BUILD_DIR})
+
+# now we build
+add_custom_command(
+  OUTPUT ${INOCHI2D_SO}
+  COMMAND ${DUB_EXECUTABLE} build
+    --compiler=${LDC_EXECUTABLE}
+    --build=release-debug
+    --config=dynamic
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    ${INOCHI2D_SOURCE_DIR}/out/libinochi2d.so
+    ${INOCHI2D_SO}
+  WORKING_DIRECTORY ${INOCHI2D_SOURCE_DIR}
+  COMMENT "Building inochi2d with ${DUB_EXECUTABLE} (${LDC_EXECUTABLE}) and copying into ${INOCHI2D_BUILD_DIR}"
+)
+
+add_custom_target(build-inochi2d ALL DEPENDS ${INOCHI2D_SO})
+
+# now that it's built we finally add the library
+add_library(inochi2d SHARED IMPORTED GLOBAL)
+set_target_properties(inochi2d PROPERTIES
+  IMPORTED_LOCATION ${INOCHI2D_SO}
+  INTERFACE_INCLUDE_DIRECTORIES ${INOCHI2D_SOURCE_DIR}/res
+)
+
+install(FILES ${INOCHI2D_SO}
+  DESTINATION lib
+)
+
+#-------------------------Dear imGui stuff-------------------------
+
+# imgui
+add_library(imgui STATIC
+  external/imgui/imgui.cpp
+  external/imgui/imgui_widgets.cpp
+  external/imgui/imgui_tables.cpp
+  external/imgui/imgui_demo.cpp
+)
+
+target_include_directories(imgui
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui
+)
+
+# imgui file dialog
+add_library(imgui_file_dialog STATIC
+  external/ImGuiFileDialog/ImGuiFileDialog.cpp
+)
+
+target_include_directories(imgui_file_dialog
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/ImGuiFileDialog
+)
+
+target_link_libraries(imgui_file_dialog 
+  PUBLIC 
+    imgui
+)
+
+# imgui-sfml
+# add_library(imgui_sfml SHARED
+#   external/imgui-sfml/imgui-SFML.cpp
+# )
+
+# target_include_directories(imgui_sfml
+#   PUBLIC
+#     ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui   # your ImGui
+#     ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui-sfml
+# )
+
+# target_link_libraries(imgui_sfml
+#   PUBLIC
+#     SFML::Graphics
+#     OpenGL::GL
+#     imgui
+# )
+
+if(WIN32 AND MINGW)
+  target_link_libraries(imgui_sfml PUBLIC imm32)
+endif()
+#-------------------------------ROS2-------------------------------
+
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
@@ -85,12 +194,8 @@ add_executable(face2d
   src/camera.cpp
   src/parameter.cpp
 )
-# Ensure runtime linker can find the shared lib from install tree
-#set_target_properties(face2d PROPERTIES
-#  BUILD_RPATH "$ORIGIN/.."
-#  INSTALL_RPATH "$ORIGIN/.."
-#)
-add_dependencies(face2d build-inochi2d-c)
+
+add_dependencies(face2d build-inochi2d)
 
 ament_target_dependencies(face2d
   rclcpp
@@ -99,14 +204,17 @@ ament_target_dependencies(face2d
   lifecycle_msgs
   face_msgs
   yaml-cpp
-  # EXCLUDE_TARGET_LIBRARIES
 )
 
 target_link_libraries(face2d  
   SFML::Window
+  SFML::Graphics
   OpenGL::GL
-  inochi2d-c
+  inochi2d
   yaml-cpp
+  imgui
+  # imgui_sfml
+  imgui_file_dialog
 )
 
 target_include_directories(face2d
@@ -115,9 +223,10 @@ target_include_directories(face2d
     $<INSTALL_INTERFACE:include>
 )
 
-
 install(
-  DIRECTORY puppet
+  DIRECTORY 
+    puppet
+    fonts
   DESTINATION share/${PROJECT_NAME}
 )
 

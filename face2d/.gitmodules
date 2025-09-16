@@ -1,4 +1,12 @@
-[submodule "external/inochi2d-c"]
-	path = external/inochi2d-c
-	url = git@github.com:Tomico-DEV/inochi2d-c.git
-	branch = v8_0
+[submodule "external/imgui"]
+	path = external/imgui
+	url = git@github.com:ocornut/imgui.git
+[submodule "external/ImGuiFileDialog"]
+	path = external/ImGuiFileDialog
+	url = git@github.com:aiekick/ImGuiFileDialog.git
+[submodule "external/imgui-sfml"]
+	path = external/imgui-sfml
+	url = git@github.com:SFML/imgui-sfml.git
+[submodule "external/inochi2d"]
+	path = external/inochi2d
+	url = git@github.com:Tomico-DEV/inochi2d.git

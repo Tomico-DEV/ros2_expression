@@ -32,8 +32,7 @@
 
 #pragma once
 
-#define INOCHI2D_GLYES
-#include <inochi2d.h>
+#include "inochi2d/camera.h"
 
 #include <SFML/System.hpp>
 
@@ -56,11 +55,19 @@ public:
   void set_zoom(float zoom);
   float get_zoom();
 
+  void update();
+
   void set_pos(sf::Vector2f position);
   sf::Vector2f get_pos();
 
+  /**
+   * \brief set viewport size
+   */
+  void set_size(sf::Vector2f size);
+  sf::Vector2f get_size();
+
 private:
-  InCamera * p_cam_ = nullptr;
+  in_camera_t * p_cam_ = nullptr;
   sf::Vector2f pos_;
   float zoom_;
 };

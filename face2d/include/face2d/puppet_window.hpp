@@ -31,9 +31,6 @@
 
 #pragma once
 
-#define INOCHI2D_GLYES
-#include <inochi2d.h>
-
 #include <atomic>
 #include <algorithm>
 #include <chrono>
@@ -51,15 +48,21 @@
 
 // ROS2
 #include "rclcpp/logging.hpp"
-#include "rclcpp/clock.hpp"
+#include "ament_index_cpp/get_package_share_directory.hpp"
 
 // SFML
 #include <SFML/Window.hpp>
 #include <SFML/OpenGL.hpp>
+#include <SFML/Graphics.hpp>
 
 // face2d
 #include <face2d/camera.hpp>
 #include <face2d/parameter.hpp>
+
+// inochi2d
+#include "inochi2d/eh.h"
+#include "inochi2d/puppet.h"
+#include "inochi2d/render.h"
 
 
 namespace face2d
@@ -120,20 +123,24 @@ private:
   void get_puppet_params_();
   void update_puppet_params_();
 
-  // inochi2d
-  std::string puppet_filepath_;
-  InPuppet * p_puppet_ = nullptr;
-  std::shared_ptr<puppet_params_t> p_puppet_params_;
-  std::queue<std::promise<std::shared_ptr<puppet_params_t>>> get_params_queue_;
-
   // thread and sfml
   std::atomic<bool> running_{false};
   std::thread window_thread_;
   std::shared_ptr<std::mutex> p_window_mutex_;
-  sf::Window window_;
+  sf::RenderWindow window_;
   std::string window_name_;
   sf::Vector2u size_;
   uint32_t style_;
+
+  // graphics
+  sf::Font font_;
+
+  // inochi2d
+  std::string puppet_filepath_;
+  in_puppet_t * p_puppet_ = nullptr;
+  std::shared_ptr<puppet_params_t> p_puppet_params_;
+  std::queue<std::promise<std::shared_ptr<puppet_params_t>>> get_params_queue_;
+
 
   // callbacks
   std::function<void()> close_callback_ = nullptr;

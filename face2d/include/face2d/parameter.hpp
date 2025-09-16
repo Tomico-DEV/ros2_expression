@@ -31,9 +31,6 @@
 
 #pragma once
 
-#define INOCHI2D_GLYES
-#include <inochi2d.h>
-
 #include <thread>
 #include <utility>
 #include <string>
