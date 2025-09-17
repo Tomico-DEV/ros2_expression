@@ -14,7 +14,8 @@ namespace expression
 
 ExpressionNode::ExpressionNode(const rclcpp::NodeOptions &options)
 : rclcpp_lifecycle::LifecycleNode{"expression", options},
-  p_chan_map_{std::make_shared<ChanMap>()}
+  p_chan_map_{std::make_shared<ChanMap>()},
+  tf_buffer_{get_clock()}, tf_listener_{tf_buffer_}
 {
   declare_params_();
 }
@@ -121,6 +122,11 @@ void ExpressionNode::declare_params_()
   animator_plugins_str_ = declare_parameter<std::vector<std::string>>(
     "animator_plugins", {"expression::BreathAnimator", "expression::BlinkAnimator"},
     make_desc("Animators to load"));
+
+  face_frame_ = declare_parameter<std::string>(
+    "face_frame", "face", make_desc("name of head frame"));
+  gaze_prefix_ = declare_parameter<std::string>(
+    "gaze_prefix", "gaze", make_desc("gaze tfs prefix"));
 }
 
 void ExpressionNode::create_channels_()
@@ -210,10 +216,62 @@ void ExpressionNode::stop_animation_()
   RCLCPP_INFO(get_logger(), "Stopped animators");
 }
 
+/**
+ * \brief publish events and update animators
+ */
 void ExpressionNode::update_animation_()
 {
   while (running_.load()) {
+    // get gaze transforms
+    std::vector<std::string> gaze_frames;
+    bool face_frame_present = false;
+    for (const auto & frame : tf_buffer_.getAllFrameNames()) {
+      if (frame == face_frame_) {
+        face_frame_present = true;
+      }
+      if (frame.starts_with(gaze_prefix_)) {
+        gaze_frames.push_back(frame);
+      }
+    }
+    // get head to gaze transform
+    std::vector<Vec3D> gaze_vecs;
+    if (face_frame_present) {
+      for (const auto & gaze_frame : gaze_frames) {
+        try {
+          geometry_msgs::msg::TransformStamped t;
+          t = tf_buffer_.lookupTransform(
+            gaze_frame, face_frame_, tf2::TimePointZero);
+          // transform origin to see where it ends up
+
+          geometry_msgs::msg::PointStamped origin;
+          geometry_msgs::msg::PointStamped origin_transformed;
+          origin.header.frame_id = t.header.frame_id;
+          origin.point.x = 0.0;
+          origin.point.y = 0.0;
+          origin.point.z = 0.0;
+          tf2::doTransform(origin, origin_transformed, t);
+
+          Vec3D gaze_vec {
+            origin_transformed.point.x,
+            origin_transformed.point.y,
+            origin_transformed.point.z};
+
+          gaze_vecs.push_back(gaze_vec);
+        } catch (const std::exception& e) {
+          RCLCPP_ERROR(
+            get_logger(),
+            "Failed to get gaze_transform (%s): %s",
+            gaze_frame.c_str(), e.what());
+        }
+      }
+    }
+
     for (const auto & animator : animators_) {
+      // gaze event
+      for (const auto & gaze : gaze_vecs) {
+        animator->handle_event(
+          Event{Event::Type::GAZE, gaze});
+      }
       animator->update(animate_rate_);
     }
 

@@ -10,16 +10,26 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # find dependencies
+
+# ROS2
 find_package(ament_cmake REQUIRED)
 find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
-find_package(speaker_actions REQUIRED)
-find_package(lifecycle_msgs REQUIRED)
-find_package(face_msgs REQUIRED)
 find_package(pluginlib REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
+
+# tf2
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+
+# Expression
+find_package(speaker_actions REQUIRED)
+find_package(face_msgs REQUIRED)
 
 # Tweeny
 find_path(TWEENY_INCLUDE_DIR tweeny)
@@ -69,10 +79,14 @@ ament_target_dependencies(expression_server
   rclcpp_action
   rclcpp_lifecycle
   rclcpp_components
+  pluginlib
   lifecycle_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  geometry_msgs
   speaker_actions
   face_msgs
-  pluginlib
 )
 
 rclcpp_components_register_node(expression_server

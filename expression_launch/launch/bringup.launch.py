@@ -51,6 +51,13 @@ def generate_launch_description():
         arguments=['0', '0', '0', '0', '0', '0', '1', 'world', 'base_link'],
     )
 
+    face_tf = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='static_transform_publisher',
+        arguments=['0', '0', '0.5', '0', '0', '0', '1', 'base_link', 'face'],
+    )
+
     gaze_server = Node(
         package='interactive_gaze',
         executable='gaze_server',
@@ -69,6 +76,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         base_link_tf,
+        face_tf,
         gaze_server,
         rviz2,
         speaker_node,

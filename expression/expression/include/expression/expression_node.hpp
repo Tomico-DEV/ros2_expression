@@ -15,26 +15,33 @@
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
 
-#include "ament_index_cpp/get_package_share_directory.hpp"
+#include "tf2/exceptions.hpp"
+#include "tf2_ros/transform_listener.hpp"
+#include "tf2_ros/buffer.hpp"
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include "geometry_msgs/msg/transform_stamped.hpp"
+#include "geometry_msgs/msg/point_stamped.hpp"
 
-#include "speaker_actions/action/speak.hpp"
-#include "speaker_actions/action/tts.hpp"
+#include "ament_index_cpp/get_package_share_directory.hpp"
 
 #include "lifecycle_msgs/msg/state.hpp"
 
-#include "face_msgs/msg/param1_d.hpp"
-#include "face_msgs/msg/param2_d.hpp"
-
-// Tweeny
-#include "tweeny/tweeny.h"
-
+// expression
 #include "expression/eye_channels.hpp"
 #include "expression/mouth_channels.hpp"
 #include "expression/neck_channels.hpp"
 #include "expression/utils.hpp"
+#include "expression/event.hpp"
 #include "expression/animator.hpp"
-
 #include "expression/visibility_control.h"
+
+#include "speaker_actions/action/speak.hpp"
+#include "speaker_actions/action/tts.hpp"
+
+#include "tweeny/tweeny.h"
+
+#include "face_msgs/msg/param1_d.hpp"
+#include "face_msgs/msg/param2_d.hpp"
 
 // plugins
 #include <pluginlib/class_loader.hpp>
@@ -86,7 +93,6 @@ private:
   rclcpp_action::Client<SpeakAction>::SharedPtr p_speak_client_;
   rclcpp_action::Server<TtsAction>::SharedPtr p_tts_server_;
 
-
   // face publishers
   EyeChannels::SharedPtr p_left_eye_chans_;
   EyeChannels::SharedPtr p_right_eye_chans_;
@@ -95,6 +101,12 @@ private:
 
   // channel map
   std::shared_ptr<ChanMap> p_chan_map_;
+
+  // tf
+  tf2_ros::Buffer tf_buffer_;
+  tf2_ros::TransformListener tf_listener_;
+  std::string face_frame_;
+  std::string gaze_prefix_;
 
   // animators
   std::unique_ptr<pluginlib::ClassLoader<Animator>> animator_loader_;

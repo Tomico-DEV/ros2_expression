@@ -92,7 +92,7 @@ class GazeMarker(Node):
         t = TransformStamped()
         t.header.stamp = self.get_clock().now().to_msg()
         t.header.frame_id = 'base_link'
-        t.child_frame_id = 'gaze'
+        t.child_frame_id = 'gaze/0'
 
         t.transform.translation.x = pose.position.x
         t.transform.translation.y = pose.position.y
