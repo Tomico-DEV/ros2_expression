@@ -134,7 +134,7 @@ auto Blink::add_interval_(
     to(0).during(interval);
 }
 
-void BlinkAnimator::initialize(std::shared_ptr<ChanMap> p_chan_map)
+void BlinkAnimator::initialize(std::shared_ptr<ChanMap> p_chan_map, const ParamMap&)
 {
   using fpath = std::filesystem::path;
 

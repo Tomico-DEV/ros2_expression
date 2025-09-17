@@ -26,7 +26,8 @@
   <!--expression-->
   <depend>speaker_actions</depend>
   <depend>face_msgs</depend>
-  <depend>libtweeny-dev</depend>
+  <build_depend>libtweeny-dev</build_depend>
+  <build_depend>yaml-cpp</build_depend>
   
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

@@ -2,6 +2,7 @@
 #pragma once
 
 #include <atomic>
+#include <filesystem>
 #include <format>
 #include <string>
 #include <memory>
@@ -38,7 +39,11 @@
 #include "speaker_actions/action/speak.hpp"
 #include "speaker_actions/action/tts.hpp"
 
+// tweeny
 #include "tweeny/tweeny.h"
+
+// YAML
+#include "yaml-cpp/yaml.h"
 
 #include "face_msgs/msg/param1_d.hpp"
 #include "face_msgs/msg/param2_d.hpp"
@@ -90,6 +95,11 @@ private:
     return false;
   }
 
+  void flatten_mappings_(
+    const YAML::Node & node,
+    std::map<std::string, std::string> & out_map,
+    const std::string & current_path);
+
   rclcpp_action::Client<SpeakAction>::SharedPtr p_speak_client_;
   rclcpp_action::Server<TtsAction>::SharedPtr p_tts_server_;
 
@@ -109,6 +119,7 @@ private:
   std::string gaze_prefix_;
 
   // animators
+  std::filesystem::path anim_config_path_;
   std::unique_ptr<pluginlib::ClassLoader<Animator>> animator_loader_;
   std::vector<std::string> animator_plugins_str_;
   std::vector<Animator::SharedPtr> animators_;

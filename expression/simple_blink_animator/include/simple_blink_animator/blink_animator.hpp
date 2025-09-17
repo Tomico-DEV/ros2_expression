@@ -75,7 +75,8 @@ private:
 class BlinkAnimator : public Animator
 {
 public:
-  void initialize(std::shared_ptr<ChanMap> p_chan_map) override;
+  void initialize(
+    std::shared_ptr<ChanMap> p_chan_map, const ParamMap&) override;
 
   inline auto get_name() -> std::string override
   {

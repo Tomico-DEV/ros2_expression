@@ -1,23 +1,23 @@
 """Interactive gaze server."""
-import rclpy
-from rclpy.node import Node
-
-from math import sqrt
-
-from visualization_msgs.msg import InteractiveMarkerControl, InteractiveMarker
-from visualization_msgs.msg import Marker
-
-from interactive_markers.interactive_marker_server import InteractiveMarkerServer
 
 from geometry_msgs.msg import TransformStamped
 
+from interactive_markers.interactive_marker_server import InteractiveMarkerServer
+
+import rclpy
+from rclpy.node import Node
+
 from tf2_ros import TransformBroadcaster
+
+from visualization_msgs.msg import InteractiveMarker, InteractiveMarkerControl
+from visualization_msgs.msg import Marker
 
 
 class GazeMarker(Node):
     """Gaze marker server node."""
 
     def __init__(self):
+        """Create tf broadcaster and server."""
         super().__init__('gaze_marker')
 
         self.tf_broadcaster = TransformBroadcaster(self)
@@ -25,9 +25,13 @@ class GazeMarker(Node):
 
         self.sphere_scale = 0.1
 
-        self.make_marker()
-        
-    def make_marker(self):
+        self.current_pose = None
+
+        self._make_marker()
+
+        self.timer = self.create_timer(1.0 / 30.0, self._broadcast_tf)
+
+    def _make_marker(self):
         int_marker = InteractiveMarker()
         int_marker.header.frame_id = 'base_link'
         int_marker.name = 'gaze'
@@ -80,29 +84,35 @@ class GazeMarker(Node):
         control_plane.interaction_mode = InteractiveMarkerControl.MOVE_PLANE
 
         return control_plane
-    
+
     def _feedback_cb(self, feedback):
         pose = feedback.pose
+        self.current_pose = pose
 
         # set marker's pose to local
         self.marker_server.setPose('gaze', pose)
         self.marker_server.setPose('gaze_rot', pose)
         self.marker_server.applyChanges()
 
+    def _broadcast_tf(self):
+        if self.current_pose is None:
+            return
+
         t = TransformStamped()
         t.header.stamp = self.get_clock().now().to_msg()
         t.header.frame_id = 'base_link'
         t.child_frame_id = 'gaze/0'
 
-        t.transform.translation.x = pose.position.x
-        t.transform.translation.y = pose.position.y
-        t.transform.translation.z = pose.position.z
-        t.transform.rotation = pose.orientation
+        t.transform.translation.x = self.current_pose.position.x
+        t.transform.translation.y = self.current_pose.position.y
+        t.transform.translation.z = self.current_pose.position.z
+        t.transform.rotation = self.current_pose.orientation
 
         self.tf_broadcaster.sendTransform(t)
 
 
 def main(args=None):
+    """Start gaze server."""
     rclpy.init(args=args)
     gaze_server = GazeMarker()
     try:

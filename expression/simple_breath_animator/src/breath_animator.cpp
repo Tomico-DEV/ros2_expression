@@ -87,7 +87,8 @@ double Breathe::setpoint_noise_()
   return distribution(engine);
 }
 
-void BreathAnimator::initialize(std::shared_ptr<ChanMap> p_chan_map)
+void BreathAnimator::initialize(
+  std::shared_ptr<ChanMap> p_chan_map, const ParamMap &)
 {
   using fpath = std::filesystem::path;
 

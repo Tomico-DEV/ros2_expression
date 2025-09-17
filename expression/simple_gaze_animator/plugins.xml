@@ -1,0 +1,7 @@
+<library path="simple_gaze_animator">
+  <class
+    type="expression::GazeAnimator"
+    base_class_type="expression::Animator">
+    <description>Simple gaze animator plugin</description>
+  </class>
+</library>

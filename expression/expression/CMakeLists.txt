@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.10)
 project(expression)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -20,6 +20,7 @@ find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 # tf2
 find_package(tf2 REQUIRED)
@@ -87,6 +88,9 @@ ament_target_dependencies(expression_server
   geometry_msgs
   speaker_actions
   face_msgs
+)
+target_link_libraries(expression_server
+  yaml-cpp
 )
 
 rclcpp_components_register_node(expression_server

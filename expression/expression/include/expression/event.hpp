@@ -2,6 +2,9 @@
 
 #include <any>
 #include <string>
+#include <map>
+#include <utility>
+#include <vector>
 
 namespace expression
 {
@@ -39,7 +42,7 @@ struct EventDataType<Event::Type::SPEAK> {
 
 template<>
 struct EventDataType<Event::Type::GAZE> {
-  using type = Vec3D;
+  using type = std::map<std::string, Vec3D>;
 };
 
 template<Event::Type T>

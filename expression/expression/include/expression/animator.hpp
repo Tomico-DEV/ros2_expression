@@ -3,8 +3,10 @@
 #include <chrono>
 #include <format>
 #include <string>
+#include <stdexcept>
 #include <map>
 #include <memory>
+#include <variant>
 
 #include "expression/channel_core.hpp"
 #include "expression/event.hpp"
@@ -21,9 +23,12 @@ public:
       std::string,
       std::variant<ChannelCore1D::SharedPtr, ChannelCore2D::SharedPtr>
     >;
+  using ParamMap = std::map<std::string, std::string>;
 
   virtual ~Animator() = default;
-  virtual void initialize(std::shared_ptr<ChanMap> p_chan_map) = 0;
+  virtual void initialize(
+    std::shared_ptr<ChanMap> p_chan_map,
+    const ParamMap & param_map) = 0;
   /**
    * @brief get animator name
    */
@@ -50,6 +55,28 @@ protected:
       } else {
         throw std::runtime_error{
           std::format("{} channel is not 1D!", chan_name)};
+      }
+    } catch (const std::exception & e) {
+      throw std::runtime_error{
+        std::format("Error getting channel {}: {}", chan_name, e.what())};
+    }
+
+    return p_chan;
+  }
+
+  static inline auto get_2d_chan_(
+    ChanMap chan_p_map, const std::string & chan_name)
+  -> ChannelCore2D::SharedPtr
+  {
+    ChannelCore2D::SharedPtr p_chan;
+
+    try {
+      auto maybe_channel = chan_p_map.at(chan_name);
+      if (std::holds_alternative<ChannelCore2D::SharedPtr>(maybe_channel)) {
+        p_chan = std::get<ChannelCore2D::SharedPtr>(maybe_channel);
+      } else {
+        throw std::runtime_error{
+          std::format("{} channel is not 2D!", chan_name)};
       }
     } catch (const std::exception & e) {
       throw std::runtime_error{

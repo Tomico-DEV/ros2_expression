@@ -108,7 +108,7 @@ void ExpressionNode::declare_params_()
   RCLCPP_INFO(get_logger(), "Declared params");
   using ParamDesc = rcl_interfaces::msg::ParameterDescriptor;
   // using IntRange = rcl_interfaces::msg::IntegerRange;
-  // using fpath = std::filesystem::path;
+  using fpath = std::filesystem::path;
 
   // convenience function for making parameter description
   auto make_desc =
@@ -120,13 +120,26 @@ void ExpressionNode::declare_params_()
     };
 
   animator_plugins_str_ = declare_parameter<std::vector<std::string>>(
-    "animator_plugins", {"expression::BreathAnimator", "expression::BlinkAnimator"},
+    "animator_plugins",
+    {  // default animators
+      "expression::BreathAnimator",
+      "expression::BlinkAnimator",
+      "expression::GazeAnimator"},
     make_desc("Animators to load"));
 
   face_frame_ = declare_parameter<std::string>(
     "face_frame", "face", make_desc("name of head frame"));
   gaze_prefix_ = declare_parameter<std::string>(
     "gaze_prefix", "gaze", make_desc("gaze tfs prefix"));
+
+  fpath launch_pkg_path =
+    ament_index_cpp::get_package_share_directory("expression_launch");
+  fpath default_anim_config_path =
+    launch_pkg_path / "config" / "animator_config.yaml";
+  std::string anim_config_pathstr = declare_parameter<std::string>(
+    "animator_config", default_anim_config_path.string(),
+    make_desc("Filepath to animator config yaml"));
+  anim_config_path_ = fpath{anim_config_pathstr};
 }
 
 void ExpressionNode::create_channels_()
@@ -151,13 +164,33 @@ void ExpressionNode::create_channels_()
 
 void ExpressionNode::create_animators_()
 {
+  YAML::Node anim_config = YAML::LoadFile(
+    anim_config_path_.string())["animators"];
+
   animator_loader_ =
     std::make_unique<pluginlib::ClassLoader<Animator>>("expression", "expression::Animator");
   for (const auto & animator_str : animator_plugins_str_) {
     Animator::SharedPtr animator;
     try {
       animator = animator_loader_->createSharedInstance(animator_str);
-      animator->initialize(p_chan_map_);
+      // get params
+      Animator::ParamMap param_map;
+      std::string anim_name = animator->get_name();
+      try {
+        auto anim_params = anim_config[anim_name];
+        if (anim_params) {
+          flatten_mappings_(anim_params, param_map, "");
+        } else {
+          RCLCPP_WARN(
+            get_logger(), "Skipping params for %s (not found)", anim_name.c_str());
+        }
+      } catch (const std::exception& e) {
+        RCLCPP_ERROR(
+          get_logger(),
+          "Failed to parse animator %s params!: %s",
+          anim_name.c_str(), e.what());
+      }
+      animator->initialize(p_chan_map_, param_map);
       animators_.push_back(animator);
     } catch (const std::exception& e) {
       throw std::runtime_error{
@@ -166,6 +199,42 @@ void ExpressionNode::create_animators_()
           animator_str, e.what())};
     }
     RCLCPP_INFO(get_logger(), "Loaded animator: %s", animator->get_name().c_str());
+  }
+}
+
+/**
+ * \brief convert nested mappings specified in puppet's yaml into
+ *        a map of string paths
+ * \param [in] node root node to search from
+ * \param [out] out_map output map to be populated
+ * \param [in] current_path string path of provided root node
+ */
+void ExpressionNode::flatten_mappings_(
+  const YAML::Node & node,
+  std::map<std::string, std::string> & out_map,
+  const std::string & current_path
+)
+{
+  if (!node.IsMap()) {
+    return;
+  }
+
+  // node is a map - get key and valueuint32 style
+  for (auto & entry : node) {
+    std::string key = entry.first.as<std::string>();
+    const YAML::Node & value = entry.second;
+
+    // append key to current path
+    std::string new_path = current_path + "/" + key;
+
+    if (value.IsMap()) {
+      flatten_mappings_(value, out_map, new_path);  // keep going..
+    } else if (value.IsScalar()) {
+      out_map[new_path] = value.as<std::string>();  // reached end, add key and val to map!
+    } else {
+      throw std::runtime_error(
+        "Unsupported value in animator_config! Must be map or scalar");
+    }
   }
 }
 
@@ -234,13 +303,13 @@ void ExpressionNode::update_animation_()
       }
     }
     // get head to gaze transform
-    std::vector<Vec3D> gaze_vecs;
+    std::map<std::string, Vec3D> gaze_map;
     if (face_frame_present) {
       for (const auto & gaze_frame : gaze_frames) {
         try {
           geometry_msgs::msg::TransformStamped t;
           t = tf_buffer_.lookupTransform(
-            gaze_frame, face_frame_, tf2::TimePointZero);
+            face_frame_, gaze_frame, tf2::TimePointZero);
           // transform origin to see where it ends up
 
           geometry_msgs::msg::PointStamped origin;
@@ -256,7 +325,7 @@ void ExpressionNode::update_animation_()
             origin_transformed.point.y,
             origin_transformed.point.z};
 
-          gaze_vecs.push_back(gaze_vec);
+          gaze_map[gaze_frame] = gaze_vec;
         } catch (const std::exception& e) {
           RCLCPP_ERROR(
             get_logger(),
@@ -268,9 +337,9 @@ void ExpressionNode::update_animation_()
 
     for (const auto & animator : animators_) {
       // gaze event
-      for (const auto & gaze : gaze_vecs) {
+      if (gaze_map.size() > 0) {
         animator->handle_event(
-          Event{Event::Type::GAZE, gaze});
+          Event{Event::Type::GAZE, gaze_map});
       }
       animator->update(animate_rate_);
     }

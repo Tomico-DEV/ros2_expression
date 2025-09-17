@@ -15,9 +15,11 @@ struct Vec2D
 {
   double x, y;
 
-  Vec2D operator+(const Vec2D& o) const { return {x + o.x, y + o.y}; }
-  Vec2D operator-(const Vec2D& o) const { return {x - o.x, y - o.y}; }
-  Vec2D operator*(double d) const { return {x * d, y * d}; }
+  inline Vec2D operator+(const Vec2D& o) const { return {x + o.x, y + o.y}; }
+  inline Vec2D operator-(const Vec2D& o) const { return {x - o.x, y - o.y}; }
+  inline Vec2D operator*(double d) const { return {x * d, y * d}; }
+  inline Vec2D operator-() const { return {-x, -y}; }
+  inline Vec2D operator/(double d) const { return {x / d, y / d}; }
 };
 
 /**

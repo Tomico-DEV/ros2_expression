@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(simple_blink_animator)
+project(simple_gaze_animator)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -11,40 +11,31 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(ament_index_cpp REQUIRED)
 find_package(expression REQUIRED)
-find_package(behaviortree_cpp REQUIRED)
 find_package(pluginlib REQUIRED)
 
 pluginlib_export_plugin_description_file(expression plugins.xml)
 
-add_library(simple_blink_animator SHARED
-  src/blink_animator.cpp
+add_library(simple_gaze_animator SHARED
+  src/gaze_animator.cpp
 )
-ament_target_dependencies(simple_blink_animator
-  ament_index_cpp
-  behaviortree_cpp
+ament_target_dependencies(simple_gaze_animator
   pluginlib
 )
-target_link_libraries(simple_blink_animator
+target_link_libraries(simple_gaze_animator
   expression::expression_interfaces
 )
-target_include_directories(simple_blink_animator PRIVATE
+target_include_directories(simple_gaze_animator PRIVATE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>
 )
 
-install(TARGETS simple_blink_animator
+install(TARGETS simple_gaze_animator
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION bin
 )
-
 install(FILES plugins.xml
-  DESTINATION share/${PROJECT_NAME}
-)
-install(
-  DIRECTORY behavior_trees
   DESTINATION share/${PROJECT_NAME}
 )
 
