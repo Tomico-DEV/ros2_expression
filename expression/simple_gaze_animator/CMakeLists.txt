@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
 find_package(expression REQUIRED)
 find_package(pluginlib REQUIRED)
 
@@ -20,6 +21,7 @@ add_library(simple_gaze_animator SHARED
   src/gaze_animator.cpp
 )
 ament_target_dependencies(simple_gaze_animator
+  rclcpp
   pluginlib
 )
 target_link_libraries(simple_gaze_animator

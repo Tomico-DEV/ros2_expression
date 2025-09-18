@@ -30,6 +30,8 @@ struct Vec3D
   double x;
   double y;
   double z;
+
+  bool operator==(const Vec3D & o) const { return x == o.x && y == o.y && z == o.z; }
 };
 
 template<Event::Type>

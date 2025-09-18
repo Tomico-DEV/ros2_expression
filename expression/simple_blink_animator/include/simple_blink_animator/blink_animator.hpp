@@ -86,7 +86,7 @@ public:
   inline void handle_event(const Event &) override
   { }
 
-  inline void update(std::chrono::milliseconds dt) override
+  inline void update(std::chrono::milliseconds) override
   {
     tree_.tickOnce();
   }

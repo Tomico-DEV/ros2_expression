@@ -1,0 +1,20 @@
+animators:
+  simple_gaze_animator:
+    eye:
+      horizontal:
+        max: 0.523599
+        min: -0.523599
+      vertical:
+        max: 0.523599
+        min: -0.523599
+      center_dist: 0.15
+    saccade:
+      start_delay: 1000
+      angle:
+        max: 0.1
+        stddev: 0.03
+      interval:
+        min: 300
+        max: 1000
+        avg: 600
+        stddev: 300

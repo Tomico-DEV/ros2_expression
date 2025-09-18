@@ -4,13 +4,14 @@ param_mapping:
     left_lip_corner: "Left Lip Corner"
     openness: "Mouth Openness"
     wideness: "Mouth Wideness"
-  right_eye:
+  # eyes are swapped
+  left_eye:
     brow_inner: "Right Brow Inner"
     brow_outer: "Right Brow Outer"
     eyelid: "Right Eyelid"
     eye: "Right Eye"
     cheek: "Right Cheek"
-  left_eye:
+  right_eye:
     brow_inner: "Left Brow Inner"
     brow_outer: "Left Brow Outer"
     eyelid: "Left Eyelid"
